@@ -90,7 +90,12 @@ export function Today() {
       </section>
 
       <footer className="animate-rise mt-auto flex items-center justify-between text-xs text-ink/40 [animation-delay:1000ms]">
-        <span className="font-data">v0.1.0 · scaffold</span>
+        <span className="font-data">
+          v0.2.0 ·{" "}
+          <a href="#/library" className="underline-offset-2 hover:underline">
+            library
+          </a>
+        </span>
         <span className="font-data">
           {server === "checking" && "server: checking…"}
           {server === "connected" && "server: connected"}

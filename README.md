@@ -73,7 +73,7 @@ pytest                          # run tests
 ## Build order
 
 1. ✅ **Scaffold** — repo, stack, deploy pipeline, Firebase auth wiring, installable PWA shell
-2. Exercise library — schema, tag vocabulary, seed data, admin view
+2. ✅ **Exercise library** — `shared/` vocabulary + 132-exercise seed, `/exercises` API with constraint-shaped filters, library browser at `#/library`
 3. Manual constraint entry — constraint model + editor, plan generation without AI
 4. Adaptive engine — deterministic rules with unit tests for every row
 5. Three-tier daily view — core loop, logging, the Readiness Map

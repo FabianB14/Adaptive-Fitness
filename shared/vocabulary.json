@@ -1,0 +1,43 @@
+{
+  "movement_pattern": [
+    "squat",
+    "hinge",
+    "push_h",
+    "push_v",
+    "pull_h",
+    "pull_v",
+    "carry",
+    "rotate",
+    "gait",
+    "core",
+    "mobility"
+  ],
+  "body_region": [
+    "ankle",
+    "knee",
+    "hip",
+    "lumbar",
+    "thoracic",
+    "cervical",
+    "shoulder",
+    "elbow",
+    "wrist"
+  ],
+  "impact_level": ["none", "low", "moderate", "high"],
+  "equipment": ["none", "bodyweight", "dumbbell", "band", "machine", "barbell"],
+  "position": ["standing", "seated", "supine", "prone", "quadruped"],
+  "intensity_tier": ["minimum", "light", "full"],
+  "side": ["left", "right", "bilateral"],
+  "contraindicated_pattern": [
+    "axial_loading",
+    "spinal_flexion_under_load",
+    "spinal_extension_under_load",
+    "spinal_rotation_under_load",
+    "overhead_pressing",
+    "deep_knee_flexion_under_load",
+    "high_impact",
+    "breath_holding_valsalva",
+    "unsupported_standing"
+  ],
+  "rom_motion": ["flexion", "extension", "abduction", "rotation"]
+}

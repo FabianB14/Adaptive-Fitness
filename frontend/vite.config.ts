@@ -9,6 +9,13 @@ const base = process.env.VITE_BASE_PATH ?? "/Adaptive-Fitness/";
 
 export default defineConfig({
   base,
+  server: {
+    fs: {
+      // The shared vocabulary/exercise seed lives one level above the
+      // frontend root and is imported directly.
+      allow: [".."],
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

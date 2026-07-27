@@ -118,12 +118,24 @@ food_logs         user_id fk, eaten_on, label, portion (portion-based, no DB),
 ## Exercise tag vocabulary
 
 Shared, closed vocabulary — the extractor emits it, the library is tagged with
-it, the filter matches on it. One source of truth, mirrored as a TS type and a
-Python enum, generated from one JSON file (`shared/vocabulary.json`, step 2).
+it, the filter matches on it. One source of truth: `shared/vocabulary.json`
+(shipped in step 2), imported by the frontend and validated against by the
+backend at startup.
+
+Two deliberate changes from the brief's draft vocabulary, made in step 2:
+
+- **Added `core` and `mobility` movement patterns.** The brief's nine patterns
+  can't classify planks, dead bugs, or the stretching/breathing work that the
+  Minimum tier and deload weeks are made of. Same-pattern swaps only work if
+  a plank can swap to a dead bug rather than to a farmer carry.
+- **`wheelchair_accessible` moved from the `position` enum to a
+  `wheelchair_ok` boolean.** A seated band row is both `seated` *and*
+  chair-friendly; making it a position value forced a choice between two true
+  facts. The boolean means "performable from a chair without transfer."
 
 ```
 movement_pattern   squat | hinge | push_h | push_v | pull_h | pull_v |
-                   carry | rotate | gait
+                   carry | rotate | gait | core | mobility
 body_region        ankle | knee | hip | lumbar | thoracic | cervical |
                    shoulder | elbow | wrist
                    -- one list for joints_loaded, readiness map zones, pain
