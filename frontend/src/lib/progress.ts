@@ -9,6 +9,7 @@ import {
   weekIndex,
   type ProgressionAction,
 } from "./engine";
+import { type PlanPace } from "./goals";
 
 export interface ExerciseState {
   lastLoadKg: number | null;
@@ -67,6 +68,7 @@ export function suggestion(
   states: ExerciseStates,
   dayMultiplier: number,
   todayISO: string,
+  pace: PlanPace = "steady",
 ): LoadSuggestion {
   const s = states[slug];
   const action = progressionDecision(s?.rpeHistory ?? [], s?.reductions ?? 0);
@@ -75,13 +77,15 @@ export function suggestion(
   let load = s.lastLoadKg;
   let note: string | undefined;
   if (action.kind === "progress") {
-    const proposed = load * (1 + action.pct / 100);
+    // Aggressive pace takes the bigger step — the 5%/week cap still rules.
+    const pct = pace === "aggressive" ? 5 : action.pct;
+    const proposed = load * (1 + pct / 100);
     const weekStart =
       s.weekLoad && s.weekLoad.week === weekIndex(todayISO)
         ? s.weekLoad.loadKg
         : load;
     load = capWeeklyIncrease(weekStart, proposed);
-    if (load > s.lastLoadKg) note = `+${action.pct}%`;
+    if (load > s.lastLoadKg) note = `+${pace === "aggressive" ? 5 : action.pct}%`;
   } else if (action.kind === "reduce") {
     load = load * (1 - action.pct / 100);
     note = "easier today";

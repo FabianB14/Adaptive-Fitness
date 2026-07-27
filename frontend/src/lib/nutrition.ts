@@ -7,6 +7,8 @@
  *  - no aggressive deficits
  */
 
+import { type GoalId, type PlanPace } from "./goals";
+
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "high";
 
 export interface Profile {
@@ -17,6 +19,11 @@ export interface Profile {
   /** null = the user prefers not to track weight. Everything still works. */
   weightKg: number | null;
   activity: ActivityLevel;
+  /** What the plan optimizes for. Defaults applied on load for old profiles. */
+  goals?: GoalId[];
+  /** How hard to push. Affects deficit size and progression speed —
+      never the safety floors. */
+  pace?: PlanPace;
 }
 
 export interface MealEntry {
@@ -40,9 +47,14 @@ export const KCAL_FLOOR: Record<Profile["sex"], number> = {
   female: 1200,
 };
 
-/** Deficit is the smaller of 15% of TDEE or 500 kcal — conservative by design. */
-export const MAX_DEFICIT_KCAL = 500;
-export const MAX_DEFICIT_FRACTION = 0.15;
+/** Deficit by pace: the smaller of the kcal cap or the TDEE fraction.
+    Even "aggressive" is conservative by broader standards — and the hard
+    floors below always win. */
+export const PACE_DEFICIT: Record<PlanPace, { capKcal: number; fraction: number }> = {
+  gentle: { capKcal: 250, fraction: 0.08 },
+  steady: { capKcal: 400, fraction: 0.12 },
+  aggressive: { capKcal: 500, fraction: 0.15 },
+};
 
 export function mifflinStJeor(
   sex: Profile["sex"],
@@ -66,7 +78,8 @@ export function calorieTarget(p: Profile, currentYear: number): CalorieTarget | 
   const age = Math.max(18, currentYear - p.birthYear);
   const bmr = mifflinStJeor(p.sex, p.weightKg, p.heightCm, age);
   const tdee = bmr * ACTIVITY_FACTOR[p.activity];
-  const deficit = Math.min(MAX_DEFICIT_KCAL, tdee * MAX_DEFICIT_FRACTION);
+  const paceRule = PACE_DEFICIT[p.pace ?? "steady"];
+  const deficit = Math.min(paceRule.capKcal, tdee * paceRule.fraction);
   const raw = Math.round(tdee - deficit);
   const floor = KCAL_FLOOR[p.sex];
   return {
@@ -86,7 +99,9 @@ export function loadProfile(): Profile | null {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw) as Profile;
-    return p.version === 1 ? p : null;
+    if (p.version !== 1) return null;
+    // Older profiles predate goals/pace.
+    return { goals: [], pace: "steady", ...p };
   } catch {
     return null;
   }

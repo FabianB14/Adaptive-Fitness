@@ -39,7 +39,7 @@ export const PATTERN_LABELS: Record<string, string> = {
   pull_v: "Pull (vertical)",
   carry: "Carry",
   rotate: "Rotate",
-  gait: "Gait",
+  gait: "Cardio & walking",
   core: "Core",
   mobility: "Mobility",
 };

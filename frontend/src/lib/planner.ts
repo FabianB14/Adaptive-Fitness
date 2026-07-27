@@ -7,6 +7,7 @@
 import { type Constraints } from "./constraints";
 import { filterPool, loadsEasingRegion } from "./filter";
 import { REGION_LABELS } from "./constraints";
+import { type GoalId } from "./goals";
 import { exercises as fullPool, type Exercise } from "./library";
 
 export interface PlannedItem {
@@ -50,6 +51,32 @@ const MINIMUM_SLOTS = [
   ["mobility", "core"],
   ["gait", "core", "mobility"],
 ];
+
+/** Goals add emphasis slots — they widen a day, never narrow it. */
+function slotsFor(base: string[][], tier: "full" | "light" | "minimum", goals: GoalId[]): string[][] {
+  if (tier === "minimum") return base; // five minutes stays five minutes
+  const slots = [...base];
+  const wantsCore =
+    goals.includes("core") ||
+    goals.includes("diastasis_recti") ||
+    goals.includes("slim_waist");
+  if (wantsCore) slots.push(["core", "rotate"]);
+  if (goals.includes("flexibility")) slots.push(["mobility"]);
+  if (goals.includes("endurance") && tier === "full") slots.push(["gait"]);
+  return slots;
+}
+
+/** Diastasis-aware core: prefer slow deep-core positions (supine,
+    quadruped) over loaded or long-lever work. */
+function goalRank(candidates: Exercise[], pattern: string, goals: GoalId[]): Exercise[] {
+  if (pattern === "core" && goals.includes("diastasis_recti")) {
+    const preferred = candidates.filter(
+      (e) => e.position === "supine" || e.position === "quadruped",
+    );
+    if (preferred.length > 0) return preferred;
+  }
+  return candidates;
+}
 
 // Deterministic PRNG (mulberry32) seeded from a string.
 function seedFrom(text: string): number {
@@ -104,6 +131,7 @@ function pickForTier(
   tier: "full" | "light" | "minimum",
   rand: () => number,
   avoid: Set<string>,
+  goals: GoalId[],
 ): PlannedItem[] {
   const chosen: PlannedItem[] = [];
   const used = new Set<string>();
@@ -117,7 +145,11 @@ function pickForTier(
       // Engine swaps (skipped twice / reduced twice) route around a slug —
       // but never at the cost of emptying the slot entirely.
       const withoutAvoided = inPattern.filter((e) => !avoid.has(e.slug));
-      candidates = withoutAvoided.length > 0 ? withoutAvoided : inPattern;
+      candidates = goalRank(
+        withoutAvoided.length > 0 ? withoutAvoided : inPattern,
+        pattern,
+        goals,
+      );
       if (candidates.length > 0) break;
     }
     if (candidates.length === 0) continue; // constraint closed this slot; skip quietly
@@ -154,6 +186,7 @@ export function generatePlan(
   dateISO: string,
   pool: Exercise[] = fullPool,
   avoidSlugs: Set<string> = new Set(),
+  goals: GoalId[] = [],
 ): DayPlan {
   const allowed = filterPool(pool, c);
   const rand = mulberry32(
@@ -170,11 +203,17 @@ export function generatePlan(
     );
   }
 
+  if (goals.includes("diastasis_recti")) {
+    notes.push(
+      "Core picks are diastasis-aware: slow, deep-core work first, no straining.",
+    );
+  }
+
   return {
     date: dateISO,
-    full: pickForTier(allowed, c, FULL_SLOTS, "full", rand, avoidSlugs),
-    light: pickForTier(allowed, c, LIGHT_SLOTS, "light", rand, avoidSlugs),
-    minimum: pickForTier(allowed, c, MINIMUM_SLOTS, "minimum", rand, avoidSlugs),
+    full: pickForTier(allowed, c, slotsFor(FULL_SLOTS, "full", goals), "full", rand, avoidSlugs, goals),
+    light: pickForTier(allowed, c, slotsFor(LIGHT_SLOTS, "light", goals), "light", rand, avoidSlugs, goals),
+    minimum: pickForTier(allowed, c, MINIMUM_SLOTS, "minimum", rand, avoidSlugs, goals),
     notes,
   };
 }

@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { loadConstraints } from "../lib/constraints";
 import { daySignals, effectiveConstraints } from "../lib/engine";
+import { ExerciseFigure } from "../components/ExerciseFigure";
 import { addLog, loadLogs, loadPainEvents } from "../lib/logs";
+import { loadProfile } from "../lib/nutrition";
 import { generatePlan } from "../lib/planner";
 import {
   applySession,
@@ -87,9 +89,18 @@ export function Session({ tier }: { tier: TierKey }) {
   );
   const [exStates] = useState(() => loadStates());
   const signals = useMemo(() => daySignals(loadLogs(), date), [date]);
+  const profile = useMemo(() => loadProfile(), []);
+  const pace = profile?.pace ?? "steady";
   const plan = useMemo(
-    () => generatePlan(constraints, date, undefined, slugsToAvoid(exStates)),
-    [constraints, date, exStates],
+    () =>
+      generatePlan(
+        constraints,
+        date,
+        undefined,
+        slugsToAvoid(exStates),
+        profile?.goals ?? [],
+      ),
+    [constraints, date, exStates, profile],
   );
   const items = plan[tier];
 
@@ -97,7 +108,7 @@ export function Session({ tier }: { tier: TierKey }) {
     const stored = loadActive(date, tier);
     const init: Record<string, ItemState> = {};
     for (const item of items) {
-      const sug = suggestion(item.exercise.slug, exStates, signals.multiplier, date);
+      const sug = suggestion(item.exercise.slug, exStates, signals.multiplier, date, pace);
       init[item.exercise.slug] = stored[item.exercise.slug] ?? {
         loadKg: sug.loadKg != null ? String(sug.loadKg) : "",
         done: 0,
@@ -205,7 +216,7 @@ export function Session({ tier }: { tier: TierKey }) {
         {items.map((item, idx) => {
           const slug = item.exercise.slug;
           const s = state[slug] ?? { loadKg: "", done: 0 };
-          const sug = suggestion(slug, exStates, signals.multiplier, date);
+          const sug = suggestion(slug, exStates, signals.multiplier, date, pace);
           const isStrength = /×/.test(item.dose);
           const complete = s.done >= item.sets;
 
@@ -216,11 +227,14 @@ export function Session({ tier }: { tier: TierKey }) {
               style={{ animationDelay: `${120 + idx * 70}ms` }}
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium">{item.exercise.name}</p>
-                  <p className="mt-0.5 text-xs text-ink/50">{item.exercise.cue}</p>
-                  {item.note && <p className="mt-0.5 text-xs text-ochre">{item.note}</p>}
-                  {sug.note && <p className="mt-0.5 text-xs text-periwinkle">{sug.note}</p>}
+                <div className="flex items-start gap-3">
+                  <ExerciseFigure exercise={item.exercise} className="mt-0.5 h-12 w-12" />
+                  <div>
+                    <p className="font-medium">{item.exercise.name}</p>
+                    <p className="mt-0.5 text-xs text-ink/50">{item.exercise.cue}</p>
+                    {item.note && <p className="mt-0.5 text-xs text-ochre">{item.note}</p>}
+                    {sug.note && <p className="mt-0.5 text-xs text-periwinkle">{sug.note}</p>}
+                  </div>
                 </div>
                 <span className="font-data shrink-0 text-sm text-ink/60">{item.dose}</span>
               </div>

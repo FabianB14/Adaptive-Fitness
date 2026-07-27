@@ -6,9 +6,7 @@ import {
   loadEntries,
   loadProfile,
   removeEntry,
-  saveProfile,
   totalKcal,
-  type ActivityLevel,
   type MealEntry,
   type Profile,
 } from "../lib/nutrition";
@@ -28,13 +26,6 @@ const PORTIONS: { label: string; kcal: number }[] = [
   { label: "Big meal", kcal: 750 },
 ];
 
-const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string }[] = [
-  { value: "sedentary", label: "Mostly sitting" },
-  { value: "light", label: "On my feet some" },
-  { value: "moderate", label: "Active most days" },
-  { value: "high", label: "Very active" },
-];
-
 function todayISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -46,8 +37,7 @@ function todayISO(): string {
  * target) and the target can never dip below the safety floor.
  */
 export function Food() {
-  const [profile, setProfile] = useState<Profile | null>(() => loadProfile());
-  const [editing, setEditing] = useState(false);
+  const [profile] = useState<Profile | null>(() => loadProfile());
   const [entries, setEntries] = useState<MealEntry[]>(() => loadEntries());
   const [adding, setAdding] = useState<MealEntry["meal"] | null>(null);
 
@@ -67,15 +57,21 @@ export function Food() {
         </h1>
       </header>
 
-      {!profile || editing ? (
-        <ProfileForm
-          initial={profile}
-          onSave={(p) => {
-            saveProfile(p);
-            setProfile(p);
-            setEditing(false);
-          }}
-        />
+      {!profile ? (
+        <section className="animate-rise rounded-3xl border border-mist bg-card p-6 text-center shadow-sm [animation-delay:80ms]">
+          <p className="font-display text-lg font-semibold">
+            Let's set your target
+          </p>
+          <p className="mt-2 text-sm text-ink/60">
+            A few numbers and your goals — then the calorie ring lives here.
+          </p>
+          <a
+            href="#/setup"
+            className="mt-4 inline-block rounded-xl bg-moss px-6 py-3 font-medium text-paper transition-transform active:scale-[0.98]"
+          >
+            Set up my plan
+          </a>
+        </section>
       ) : (
         <>
           <section className="animate-rise rounded-3xl border border-mist bg-card p-6 shadow-sm [animation-delay:80ms]">
@@ -96,12 +92,12 @@ export function Food() {
                 one.
               </p>
             )}
-            <button
-              onClick={() => setEditing(true)}
-              className="mx-auto mt-2 block text-xs text-ink/50 underline-offset-2 hover:underline"
+            <a
+              href="#/setup"
+              className="mx-auto mt-2 block text-center text-xs text-ink/50 underline-offset-2 hover:underline"
             >
-              Edit profile
-            </button>
+              Edit profile & goals
+            </a>
           </section>
 
           <section className="space-y-2.5" aria-label="Meals">
@@ -263,128 +259,5 @@ function AddEntry({
         Never mind
       </button>
     </div>
-  );
-}
-
-function ProfileForm({
-  initial,
-  onSave,
-}: {
-  initial: Profile | null;
-  onSave: (p: Profile) => void;
-}) {
-  const year = new Date().getFullYear();
-  const [sex, setSex] = useState<Profile["sex"]>(initial?.sex ?? "male");
-  const [age, setAge] = useState(initial ? String(year - initial.birthYear) : "");
-  const [height, setHeight] = useState(initial ? String(initial.heightCm) : "");
-  const [weight, setWeight] = useState(initial?.weightKg ? String(initial.weightKg) : "");
-  const [skipWeight, setSkipWeight] = useState(initial ? initial.weightKg === null : false);
-  const [activity, setActivity] = useState<ActivityLevel>(initial?.activity ?? "light");
-
-  const valid = Number(age) >= 18 && Number(height) >= 100 && (skipWeight || Number(weight) > 0);
-
-  return (
-    <section className="animate-rise space-y-4 rounded-3xl border border-mist bg-card p-5 shadow-sm [animation-delay:80ms]">
-      <div>
-        <h2 className="font-display text-lg font-semibold">A few numbers</h2>
-        <p className="mt-1 text-sm text-ink/60">
-          Just enough to compute a sane calorie target. Weight is optional —
-          everything works without it.
-        </p>
-      </div>
-
-      <div className="flex rounded-full border border-mist bg-paper p-0.5" role="group" aria-label="Formula">
-        {(["male", "female"] as const).map((s) => (
-          <button
-            key={s}
-            aria-pressed={sex === s}
-            onClick={() => setSex(s)}
-            className={`flex-1 rounded-full px-3 py-2 text-sm capitalize transition-colors ${
-              sex === s ? "bg-moss text-paper" : "text-ink/60"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-sm">
-          <span className="text-xs text-ink/50">Age</span>
-          <input
-            value={age}
-            onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))}
-            inputMode="numeric"
-            className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-2.5 outline-none focus:border-moss"
-          />
-        </label>
-        <label className="text-sm">
-          <span className="text-xs text-ink/50">Height (cm)</span>
-          <input
-            value={height}
-            onChange={(e) => setHeight(e.target.value.replace(/\D/g, ""))}
-            inputMode="numeric"
-            className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-2.5 outline-none focus:border-moss"
-          />
-        </label>
-      </div>
-
-      {!skipWeight && (
-        <label className="block text-sm">
-          <span className="text-xs text-ink/50">Weight (kg)</span>
-          <input
-            value={weight}
-            onChange={(e) => setWeight(e.target.value.replace(/[^\d.]/g, ""))}
-            inputMode="decimal"
-            className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-2.5 outline-none focus:border-moss"
-          />
-        </label>
-      )}
-      <button
-        aria-pressed={skipWeight}
-        onClick={() => setSkipWeight(!skipWeight)}
-        className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
-          skipWeight ? "border-periwinkle bg-periwinkle/10" : "border-mist"
-        }`}
-      >
-        I'd rather not track weight
-        <span className="block text-xs text-ink/50">
-          You'll log food without a calorie target. Change anytime.
-        </span>
-      </button>
-
-      <div className="space-y-1.5">
-        <span className="text-xs text-ink/50">Most days I'm…</span>
-        {ACTIVITY_OPTIONS.map((o) => (
-          <button
-            key={o.value}
-            aria-pressed={activity === o.value}
-            onClick={() => setActivity(o.value)}
-            className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
-              activity === o.value ? "border-moss bg-moss/10" : "border-mist"
-            }`}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-
-      <button
-        disabled={!valid}
-        onClick={() =>
-          onSave({
-            version: 1,
-            sex,
-            birthYear: year - Number(age),
-            heightCm: Number(height),
-            weightKg: skipWeight ? null : Number(weight),
-            activity,
-          })
-        }
-        className="w-full rounded-xl bg-moss px-5 py-3 font-medium text-paper transition-transform active:scale-[0.98] disabled:opacity-40"
-      >
-        Save
-      </button>
-    </section>
   );
 }

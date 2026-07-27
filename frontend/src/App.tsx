@@ -7,6 +7,7 @@ import { InstallGate } from "./screens/InstallGate";
 import { Library } from "./screens/Library";
 import { OpenInSafari } from "./screens/OpenInSafari";
 import { Session } from "./screens/Session";
+import { isOnboarded, Setup } from "./screens/Setup";
 import { Today } from "./screens/Today";
 
 const INSTALL_GATE_DISMISSED_KEY = "af.installGate.dismissed";
@@ -41,6 +42,11 @@ export default function App() {
         }}
       />
     );
+  }
+
+  // First run (or explicit #/setup): the intake wizard owns the screen.
+  if (route.startsWith("#/setup") || !isOnboarded()) {
+    return <Setup />;
   }
 
   const sessionMatch = route.match(/^#\/session\/(full|light|minimum)/);

@@ -13,7 +13,10 @@ describe("constraint filter", () => {
   it("passes everything under default (clear) constraints except high impact", () => {
     const c = defaultConstraints(); // maxImpact: moderate
     const kept = filterPool(exercises, c);
-    expect(kept.length).toBe(exercises.length);
+    const nonHigh = exercises.filter((e) => e.impact_level !== "high");
+    expect(kept.length).toBe(nonHigh.length);
+    expect(kept.some((e) => e.slug === "steady-run")).toBe(false); // high impact
+    expect(kept.some((e) => e.slug === "easy-jog")).toBe(true); // moderate
   });
 
   it("suppressed region drops every exercise loading it", () => {

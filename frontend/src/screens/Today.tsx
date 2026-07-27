@@ -4,6 +4,7 @@ import { loadConstraints, REGION_LABELS } from "../lib/constraints";
 import { daySignals, effectiveConstraints } from "../lib/engine";
 import { API_BASE } from "../lib/env";
 import { addLog, addPainEvent, loadLogs, loadPainEvents, removeLog, type PainEvent, type SessionLog, type TierChoice } from "../lib/logs";
+import { loadProfile } from "../lib/nutrition";
 import { generatePlan, type PlannedItem } from "../lib/planner";
 import { loadStates, slugsToAvoid } from "../lib/progress";
 import {
@@ -55,7 +56,14 @@ export function Today() {
     [baseConstraints, painEvents, date],
   );
   const plan = useMemo(
-    () => generatePlan(constraints, date, undefined, slugsToAvoid(loadStates())),
+    () =>
+      generatePlan(
+        constraints,
+        date,
+        undefined,
+        slugsToAvoid(loadStates()),
+        loadProfile()?.goals ?? [],
+      ),
     [constraints, date],
   );
   const signals = useMemo(() => daySignals(logs, date), [logs, date]);
@@ -204,7 +212,7 @@ export function Today() {
       </section>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-ink/35">
-        <span className="font-data">v0.6.0</span>
+        <span className="font-data">v0.7.0</span>
         <span className="font-data">{serverOk ? "server: connected" : "on-device plan"}</span>
       </footer>
     </main>

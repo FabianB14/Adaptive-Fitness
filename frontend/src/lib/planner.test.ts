@@ -90,3 +90,37 @@ describe("plan generator", () => {
     }
   });
 });
+
+describe("goal-aware planning", () => {
+  it("flexibility and core goals add slots to full days, never to minimum", () => {
+    const c = defaultConstraints();
+    const base = generatePlan(c, DATE);
+    const goals = generatePlan(c, DATE, undefined, new Set(), [
+      "flexibility",
+      "core",
+    ]);
+    expect(goals.full.length).toBeGreaterThan(base.full.length);
+    expect(goals.full.some((i) => i.exercise.movement_pattern === "mobility")).toBe(true);
+    expect(goals.minimum.length).toBe(base.minimum.length);
+  });
+
+  it("endurance adds a cardio slot to the full day", () => {
+    const plan = generatePlan(defaultConstraints(), DATE, undefined, new Set(), ["endurance"]);
+    const gaitCount = plan.full.filter((i) => i.exercise.movement_pattern === "gait").length;
+    expect(gaitCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it("diastasis recti prefers supine/quadruped core work and says so", () => {
+    const plan = generatePlan(defaultConstraints(), DATE, undefined, new Set(), [
+      "diastasis_recti",
+    ]);
+    const coreItems = [...plan.full, ...plan.light].filter(
+      (i) => i.exercise.movement_pattern === "core",
+    );
+    expect(coreItems.length).toBeGreaterThan(0);
+    for (const item of coreItems) {
+      expect(["supine", "quadruped"]).toContain(item.exercise.position);
+    }
+    expect(plan.notes.some((n) => n.includes("diastasis"))).toBe(true);
+  });
+});

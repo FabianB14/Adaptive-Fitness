@@ -78,6 +78,7 @@ pytest                          # run tests
 4. ✅ **Adaptive engine** — every rule row implemented as a pure function with its own test (`lib/engine.ts` / `engine.test.ts`); day logging with RPE feeds it; dashboard shell with bottom tabs
 5. ✅ **Nutrition** *(pulled ahead at client request)* — Food tab with calorie ring, Mifflin-St Jeor targets with hard safety floors, portion-based diary, fully usable without tracking weight. Dark mode and the human-figure Readiness Map (man/woman, front/back) landed alongside.
 6. ✅ **Session view** — set-by-set logging with remembered loads and engine suggestions, per-exercise RPE, skip-twice→swap plumbing, pain reporting from the body figure
+6b. ✅ **Goal intake & polish** — setup wizard (stats → goals → pace) driving calories and goal-weighted plans; running/cardio additions; line-figure pose illustrations on every exercise
 7. Medical upload — extraction pipeline on top of the working constraint model
 8. Share cards
 9. Push notifications

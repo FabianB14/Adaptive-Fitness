@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ExerciseFigure } from "../components/ExerciseFigure";
 import {
   exercises,
   FLAG_LABELS,
@@ -148,11 +149,14 @@ function ExerciseCard({
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 p-4 text-left"
       >
-        <span>
-          <span className="block font-medium">{e.name}</span>
-          <span className="mt-0.5 block text-xs text-ink/50">
-            {PATTERN_LABELS[e.movement_pattern]} · {e.position} · {e.equipment}
-            {e.wheelchair_ok && " · chair-friendly"}
+        <span className="flex items-center gap-3">
+          <ExerciseFigure exercise={e} />
+          <span>
+            <span className="block font-medium">{e.name}</span>
+            <span className="mt-0.5 block text-xs text-ink/50">
+              {PATTERN_LABELS[e.movement_pattern]} · {e.position} · {e.equipment}
+              {e.wheelchair_ok && " · chair-friendly"}
+            </span>
           </span>
         </span>
         <span className="font-data shrink-0 rounded-full bg-mist px-2.5 py-1 text-xs text-ink/70">
