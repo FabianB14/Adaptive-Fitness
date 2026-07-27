@@ -124,7 +124,7 @@ export function Today() {
       ))}
 
       {/* Readiness card */}
-      <section className="animate-rise rounded-3xl border border-mist bg-white p-5 shadow-sm [animation-delay:160ms]">
+      <section className="animate-rise rounded-3xl border border-mist bg-card p-5 shadow-sm [animation-delay:160ms]">
         <div className="flex items-baseline justify-between">
           <h2 className="font-display text-base font-semibold">Readiness</h2>
           <a href="#/constraints" className="text-sm text-moss underline-offset-2 hover:underline">
@@ -185,7 +185,7 @@ export function Today() {
       </section>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-ink/35">
-        <span className="font-data">v0.4.0</span>
+        <span className="font-data">v0.5.0</span>
         <span className="font-data">{serverOk ? "server: connected" : "on-device plan"}</span>
       </footer>
     </main>
@@ -194,7 +194,7 @@ export function Today() {
 
 function StatTile({ value, unit, label }: { value: string; unit: string; label: string }) {
   return (
-    <div className="rounded-2xl border border-mist bg-white px-3 py-3.5 text-center shadow-sm">
+    <div className="rounded-2xl border border-mist bg-card px-3 py-3.5 text-center shadow-sm">
       <p className="font-data text-2xl font-medium leading-none">{value}</p>
       <p className="mt-1.5 text-[11px] leading-tight text-ink/45">
         {unit}
@@ -238,7 +238,7 @@ function TierCard({
 
   return (
     <div
-      className="animate-rise rounded-3xl border border-mist bg-white shadow-sm"
+      className="animate-rise rounded-3xl border border-mist bg-card shadow-sm"
       style={{ animationDelay: `${delay}ms` }}
     >
       <button

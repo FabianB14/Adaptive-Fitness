@@ -29,7 +29,7 @@ export function ShareSheetAnimation() {
       `}</style>
 
       {/* Phone frame */}
-      <div className="relative overflow-hidden rounded-[2rem] border-2 border-mist bg-white pb-4 pt-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-[2rem] border-2 border-mist bg-card pb-4 pt-6 shadow-sm">
         {/* Page placeholder lines */}
         <div className="space-y-2 px-5 pb-16">
           <div className="h-2 w-3/4 rounded bg-mist" />
@@ -59,7 +59,7 @@ export function ShareSheetAnimation() {
         </div>
 
         {/* Rising share sheet */}
-        <div className="af-sheet absolute inset-x-1.5 bottom-1.5 rounded-t-2xl border border-mist bg-white p-3 shadow-lg">
+        <div className="af-sheet absolute inset-x-1.5 bottom-1.5 rounded-t-2xl border border-mist bg-card p-3 shadow-lg">
           <div className="mx-auto mb-3 h-1 w-8 rounded-full bg-mist" />
           <div className="space-y-2">
             <div className="flex items-center gap-2 rounded-lg px-2 py-1.5">

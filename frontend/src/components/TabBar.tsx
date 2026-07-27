@@ -26,6 +26,17 @@ const TABS: Tab[] = [
     ),
   },
   {
+    href: "#/food",
+    label: "Food",
+    isActive: (r) => r.startsWith("#/food"),
+    icon: (a) => (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" {...stroke(a)}>
+        <path d="M12 8.5c-4.5-3.5-9 .5-7 5.5s5.5 6 7 4.5c1.5 1.5 5-.5 7-4.5s-2.5-9-7-5.5Z" />
+        <path d="M12 8.5V6c0-1.5 1-2.5 2.5-2.5" />
+      </svg>
+    ),
+  },
+  {
     href: "#/library",
     label: "Library",
     isActive: (r) => r.startsWith("#/library"),

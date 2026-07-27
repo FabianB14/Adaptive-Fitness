@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TabBar } from "./components/TabBar";
 import { detectEnv } from "./lib/env";
 import { ConstraintsScreen } from "./screens/Constraints";
+import { Food } from "./screens/Food";
 import { InstallGate } from "./screens/InstallGate";
 import { Library } from "./screens/Library";
 import { OpenInSafari } from "./screens/OpenInSafari";
@@ -45,6 +46,8 @@ export default function App() {
     <Library />
   ) : route.startsWith("#/constraints") ? (
     <ConstraintsScreen />
+  ) : route.startsWith("#/food") ? (
+    <Food />
   ) : (
     <Today />
   );

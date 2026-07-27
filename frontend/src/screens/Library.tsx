@@ -58,7 +58,7 @@ export function Library() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search by name"
-        className="animate-rise w-full rounded-xl border border-mist bg-white px-4 py-3 text-base outline-none [animation-delay:120ms] focus:border-moss"
+        className="animate-rise w-full rounded-xl border border-mist bg-card px-4 py-3 text-base outline-none [animation-delay:120ms] focus:border-moss"
         aria-label="Search exercises"
       />
 
@@ -74,7 +74,7 @@ export function Library() {
             className={`shrink-0 rounded-full border px-3.5 py-2 text-sm transition-colors ${
               pattern === p
                 ? "border-moss bg-moss text-paper"
-                : "border-mist bg-white text-ink/70"
+                : "border-mist bg-card text-ink/70"
             }`}
           >
             {PATTERN_LABELS[p] ?? p}{" "}
@@ -95,7 +95,7 @@ export function Library() {
             className={`shrink-0 rounded-full border px-3.5 py-2 text-sm capitalize transition-colors ${
               position === p
                 ? "border-periwinkle bg-periwinkle text-paper"
-                : "border-mist bg-white text-ink/70"
+                : "border-mist bg-card text-ink/70"
             }`}
           >
             {p}
@@ -106,7 +106,7 @@ export function Library() {
           className={`shrink-0 rounded-full border px-3.5 py-2 text-sm transition-colors ${
             chairOnly
               ? "border-periwinkle bg-periwinkle text-paper"
-              : "border-mist bg-white text-ink/70"
+              : "border-mist bg-card text-ink/70"
           }`}
         >
           chair-friendly
@@ -142,7 +142,7 @@ function ExerciseCard({
   onToggle: () => void;
 }) {
   return (
-    <li className="rounded-2xl border border-mist bg-white">
+    <li className="rounded-2xl border border-mist bg-card">
       <button
         onClick={onToggle}
         aria-expanded={open}

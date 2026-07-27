@@ -76,8 +76,8 @@ pytest                          # run tests
 2. ✅ **Exercise library** — `shared/` vocabulary + 132-exercise seed, `/exercises` API with constraint-shaped filters, library browser at `#/library`
 3. ✅ **Manual constraint entry** — constraint editor at `#/constraints`, deterministic on-device plan generation, live Readiness Map, vitest suite in CI
 4. ✅ **Adaptive engine** — every rule row implemented as a pure function with its own test (`lib/engine.ts` / `engine.test.ts`); day logging with RPE feeds it; dashboard shell with bottom tabs
-5. Three-tier daily view — per-set logging, pain reporting, load tracking (the engine's per-exercise progression goes live here)
-6. Medical upload — extraction pipeline on top of the working constraint model
-7. Nutrition — calorie targets and portion-based food logging (MyFitnessPal-style dashboard ring planned)
+5. ✅ **Nutrition** *(pulled ahead at client request)* — Food tab with calorie ring, Mifflin-St Jeor targets with hard safety floors, portion-based diary, fully usable without tracking weight. Dark mode and the human-figure Readiness Map (man/woman, front/back) landed alongside.
+6. Three-tier daily view — per-set logging, pain reporting, load tracking (the engine's per-exercise progression goes live here)
+7. Medical upload — extraction pipeline on top of the working constraint model
 8. Share cards
 9. Push notifications

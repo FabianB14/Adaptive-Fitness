@@ -39,7 +39,7 @@ export function InstallGate({ onContinue }: { onContinue: () => void }) {
         </ol>
         <button
           onClick={onContinue}
-          className="w-full rounded-xl border border-mist bg-white px-6 py-3.5 font-medium text-ink transition-transform active:scale-[0.98]"
+          className="w-full rounded-xl border border-mist bg-card px-6 py-3.5 font-medium text-ink transition-transform active:scale-[0.98]"
         >
           Continue in the browser for now
         </button>

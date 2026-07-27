@@ -12,6 +12,7 @@ import {
 } from "../lib/constraints";
 import { filterPool } from "../lib/filter";
 import { exercises, vocabulary } from "../lib/library";
+import { getThemePref, setThemePref, type ThemePref } from "../lib/theme";
 
 const REGION_STATES: { value: RegionState; label: string }[] = [
   { value: "clear", label: "Clear" },
@@ -39,6 +40,7 @@ const IMPACT_LABELS: Record<string, string> = {
  */
 export function ConstraintsScreen() {
   const [c, setC] = useState<Constraints>(() => loadConstraints());
+  const [theme, setTheme] = useState<ThemePref>(() => getThemePref());
 
   function update(patch: Partial<Constraints>) {
     setC(saveConstraints({ ...c, ...patch }));
@@ -70,7 +72,7 @@ export function ConstraintsScreen() {
           {vocabulary.body_region.map((region) => (
             <li
               key={region}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-mist bg-white p-3"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-mist bg-card p-3"
             >
               <span className="pl-1 text-sm font-medium">
                 {REGION_LABELS[region]}
@@ -113,7 +115,7 @@ export function ConstraintsScreen() {
                 className={`rounded-full border px-3.5 py-2.5 text-sm transition-colors ${
                   on
                     ? "border-ochre bg-ochre/15 text-ochre"
-                    : "border-mist bg-white text-ink/70"
+                    : "border-mist bg-card text-ink/70"
                 }`}
               >
                 {PATTERN_AVOID_LABELS[p]}
@@ -125,7 +127,7 @@ export function ConstraintsScreen() {
 
       <section className="animate-rise space-y-3 [animation-delay:200ms]">
         <h2 className="font-display text-lg font-semibold">Impact</h2>
-        <div className="rounded-2xl border border-mist bg-white p-3">
+        <div className="rounded-2xl border border-mist bg-card p-3">
           <Segmented
             options={vocabulary.impact_level.map((v) => ({
               value: v,
@@ -147,7 +149,7 @@ export function ConstraintsScreen() {
           {ROM_JOINTS.map((joint) => (
             <li
               key={joint}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-mist bg-white p-3"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-mist bg-card p-3"
             >
               <span className="pl-1 text-sm font-medium capitalize">{joint}s</span>
               <Segmented
@@ -188,7 +190,7 @@ export function ConstraintsScreen() {
                   className={`rounded-full border px-3.5 py-2.5 text-sm capitalize transition-colors ${
                     on
                       ? "border-moss bg-moss text-paper"
-                      : "border-mist bg-white text-ink/70"
+                      : "border-mist bg-card text-ink/70"
                   }`}
                 >
                   {eq}
@@ -203,7 +205,7 @@ export function ConstraintsScreen() {
           aria-pressed={c.chairMode}
           onClick={() => update({ chairMode: !c.chairMode })}
           className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-colors ${
-            c.chairMode ? "border-periwinkle bg-periwinkle/10" : "border-mist bg-white"
+            c.chairMode ? "border-periwinkle bg-periwinkle/10" : "border-mist bg-card"
           }`}
         >
           <span>
@@ -220,6 +222,28 @@ export function ConstraintsScreen() {
             {c.chairMode ? "on" : "off"}
           </span>
         </button>
+      </section>
+
+      <section className="animate-rise space-y-3 [animation-delay:410ms]">
+        <h2 className="font-display text-lg font-semibold">Appearance</h2>
+        <div className="rounded-2xl border border-mist bg-card p-3">
+          <Segmented
+            options={[
+              { value: "auto" as ThemePref, label: "Auto" },
+              { value: "light" as ThemePref, label: "Light" },
+              { value: "dark" as ThemePref, label: "Dark" },
+            ]}
+            value={theme}
+            onChange={(v) => {
+              setThemePref(v);
+              setTheme(v);
+            }}
+            tone="moss"
+          />
+          <p className="mt-2 pl-1 text-xs text-ink/50">
+            Auto follows your phone's setting.
+          </p>
+        </div>
       </section>
 
       <footer className="animate-rise space-y-3 [animation-delay:440ms]">

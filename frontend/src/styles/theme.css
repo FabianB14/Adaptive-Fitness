@@ -11,6 +11,7 @@
   --color-periwinkle: #6e80ad;
   --color-ochre: #9c7b3c;
   --color-mist: #dde2da;
+  --color-card: #ffffff;
 
   --font-display: "Familjen Grotesk Variable", system-ui, sans-serif;
   --font-body: "Public Sans Variable", system-ui, sans-serif;
@@ -41,6 +42,29 @@
       transform: scale(1);
     }
   }
+}
+
+/* Dark palette — same identity, lower light. Applied automatically from the
+   system preference, or forced with data-theme (set from Limits → Appearance). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-paper: #141b16;
+    --color-ink: #e7ece6;
+    --color-moss: #7fae8f;
+    --color-periwinkle: #93a3cc;
+    --color-ochre: #c99f5a;
+    --color-mist: #2c362e;
+    --color-card: #1c2620;
+  }
+}
+:root[data-theme="dark"] {
+  --color-paper: #141b16;
+  --color-ink: #e7ece6;
+  --color-moss: #7fae8f;
+  --color-periwinkle: #93a3cc;
+  --color-ochre: #c99f5a;
+  --color-mist: #2c362e;
+  --color-card: #1c2620;
 }
 
 html {
