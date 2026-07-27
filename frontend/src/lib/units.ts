@@ -70,6 +70,19 @@ export function parseLength(text: string, u: UnitSystem): number | null {
   return u === "us" ? inToCm(n) : round1(n);
 }
 
+// ----------------------------------------------------------------- distance
+
+/** Meters → "1.24 km" / "0.8 mi" (short distances as m / ft). */
+export function formatDistance(meters: number, u: UnitSystem): string {
+  if (u === "us") {
+    const mi = meters / 1609.344;
+    if (mi >= 0.1) return `${(Math.round(mi * 100) / 100).toFixed(2)} mi`;
+    return `${Math.round(meters * 3.28084)} ft`;
+  }
+  if (meters >= 1000) return `${(Math.round(meters / 10) / 100).toFixed(2)} km`;
+  return `${Math.round(meters)} m`;
+}
+
 // ------------------------------------------------------------------- height
 
 export function cmToFtIn(cm: number): { ft: number; inches: number } {

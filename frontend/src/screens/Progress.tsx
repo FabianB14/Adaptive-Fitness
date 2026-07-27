@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ShareCard } from "../components/ShareCard";
+import { WalkTracker } from "../components/WalkTracker";
 import { daySignals } from "../lib/engine";
 import { loadLogs } from "../lib/logs";
 import {
@@ -138,6 +139,20 @@ export function ProgressScreen() {
         life={life}
         targets={targets}
         onAdd={(steps, cardioMin) => {
+          const existing = metrics.activity.find((a) => a.date === date);
+          setMetrics(
+            addActivity(date, {
+              steps: (existing?.steps ?? 0) + steps,
+              cardioMin: (existing?.cardioMin ?? 0) + cardioMin,
+            }),
+          );
+        }}
+      />
+
+      <WalkTracker
+        units={units}
+        heightCm={profile?.heightCm}
+        onFinish={(steps, cardioMin) => {
           const existing = metrics.activity.find((a) => a.date === date);
           setMetrics(
             addActivity(date, {

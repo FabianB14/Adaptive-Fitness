@@ -116,6 +116,52 @@ html {
   }
 }
 
+/* Two-pose exercise figures: start ⇄ end, a slow calm alternation.
+   With reduced motion the end pose stays as a static ghost instead. */
+.af-pose-a {
+  animation: af-pose-a 3.6s ease-in-out infinite;
+}
+.af-pose-b {
+  opacity: 0;
+  animation: af-pose-b 3.6s ease-in-out infinite;
+}
+@keyframes af-pose-a {
+  0%,
+  38% {
+    opacity: 1;
+  }
+  50%,
+  88% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes af-pose-b {
+  0%,
+  38% {
+    opacity: 0;
+  }
+  50%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .af-pose-a {
+    animation: none !important;
+    opacity: 1;
+  }
+  .af-pose-b {
+    animation: none !important;
+    opacity: 0.3;
+  }
+}
+
 /* Visible keyboard focus, tinted to the palette. */
 :focus-visible {
   outline: 2px solid var(--color-moss);
