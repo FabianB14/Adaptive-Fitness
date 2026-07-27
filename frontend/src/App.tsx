@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { TabBar } from "./components/TabBar";
 import { detectEnv } from "./lib/env";
 import { ConstraintsScreen } from "./screens/Constraints";
 import { InstallGate } from "./screens/InstallGate";
@@ -40,8 +41,18 @@ export default function App() {
     );
   }
 
-  if (route.startsWith("#/library")) return <Library />;
-  if (route.startsWith("#/constraints")) return <ConstraintsScreen />;
+  const screen = route.startsWith("#/library") ? (
+    <Library />
+  ) : route.startsWith("#/constraints") ? (
+    <ConstraintsScreen />
+  ) : (
+    <Today />
+  );
 
-  return <Today />;
+  return (
+    <>
+      {screen}
+      <TabBar route={route} />
+    </>
+  );
 }

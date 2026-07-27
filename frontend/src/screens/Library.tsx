@@ -38,12 +38,14 @@ export function Library() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-6 py-10">
-      <header className="animate-rise flex items-baseline justify-between">
-        <h1 className="font-display text-2xl font-semibold">Library</h1>
-        <a href="#/" className="text-sm text-ink/60 underline-offset-2 hover:underline">
-          Today
-        </a>
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-5 pb-28 pt-8">
+      <header className="animate-rise">
+        <p className="text-xs font-medium uppercase tracking-wide text-ink/40">
+          Every exercise, tagged
+        </p>
+        <h1 className="font-display mt-0.5 text-[1.75rem] font-semibold leading-tight">
+          Library
+        </h1>
       </header>
 
       <p className="animate-rise text-sm text-ink/60 [animation-delay:60ms]">
@@ -61,7 +63,7 @@ export function Library() {
       />
 
       <div
-        className="animate-rise -mx-6 flex gap-2 overflow-x-auto px-6 pb-1 [animation-delay:180ms]"
+        className="animate-rise -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [animation-delay:180ms]"
         role="group"
         aria-label="Filter by movement pattern"
       >
@@ -82,7 +84,7 @@ export function Library() {
       </div>
 
       <div
-        className="animate-rise -mx-6 flex gap-2 overflow-x-auto px-6 pb-1 [animation-delay:220ms]"
+        className="animate-rise -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [animation-delay:220ms]"
         role="group"
         aria-label="Filter by position"
       >

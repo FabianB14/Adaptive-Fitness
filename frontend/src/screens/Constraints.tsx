@@ -47,17 +47,16 @@ export function ConstraintsScreen() {
   const poolSize = filterPool(exercises, c).length;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-8 px-6 py-10">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-8 px-5 pb-28 pt-8">
       <header className="animate-rise">
-        <div className="flex items-baseline justify-between">
-          <h1 className="font-display text-2xl font-semibold">Your limits</h1>
-          <a href="#/" className="text-sm text-ink/60 underline-offset-2 hover:underline">
-            Today
-          </a>
-        </div>
+        <p className="text-xs font-medium uppercase tracking-wide text-ink/40">
+          The plan works around these
+        </p>
+        <h1 className="font-display mt-0.5 text-[1.75rem] font-semibold leading-tight">
+          Your limits
+        </h1>
         <p className="mt-2 text-sm text-ink/60">
-          Tell the plan what to work around. Change anything, anytime — every
-          edit saves itself.
+          Change anything, anytime — every edit saves itself.
         </p>
       </header>
 
