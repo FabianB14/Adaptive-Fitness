@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { weeklyStreak } from "../lib/engine";
+import { ShareCard } from "../components/ShareCard";
+import { daySignals } from "../lib/engine";
 import { loadLogs } from "../lib/logs";
 import {
   addActivity,
@@ -22,6 +23,15 @@ import {
 } from "../lib/metrics";
 import { loadProfile, saveProfile } from "../lib/nutrition";
 import { computeStickers, earnedCount } from "../lib/rewards";
+import {
+  displayLength,
+  displayWeight,
+  lengthUnit,
+  parseLength,
+  parseWeight,
+  weightUnit,
+  type UnitSystem,
+} from "../lib/units";
 
 function todayISO(): string {
   const d = new Date();
@@ -38,6 +48,7 @@ export function ProgressScreen() {
   const [metrics, setMetrics] = useState<MetricsStore>(() => loadMetrics());
   const [goals, setGoals] = useState<GoalsStore>(() => loadGoals());
   const profile = loadProfile();
+  const units: UnitSystem = profile?.units ?? "metric";
   const date = todayISO();
 
   const trend = weightTrend(metrics.weights, date);
@@ -46,6 +57,7 @@ export function ProgressScreen() {
   const targets = weeklyTargets(profile?.activity);
   const logs = useMemo(() => loadLogs(), []);
   const sessionCount = logs.filter((l) => l.tier !== "rest").length;
+  const signals = useMemo(() => daySignals(logs, date), [logs, date]);
 
   const weightPct = goals.weight
     ? progressPct(goals.weight.start, trend ?? goals.weight.start, goals.weight.goal)
@@ -60,7 +72,7 @@ export function ProgressScreen() {
 
   const stickers = computeStickers({
     sessionCount,
-    streakWeeks: weeklyStreak(logs, date),
+    streakWeeks: signals.streakWeeks,
     totalCardioMin: life.cardioMin,
     totalSteps: life.steps,
     weightPct,
@@ -97,6 +109,7 @@ export function ProgressScreen() {
         trend={trend}
         heightCm={profile?.heightCm}
         pct={weightPct}
+        units={units}
         onLog={logWeight}
         onGoal={(g) => setGoals(saveGoals(g))}
       />
@@ -104,6 +117,7 @@ export function ProgressScreen() {
       <MeasurementsCard
         metrics={metrics}
         goals={goals}
+        units={units}
         onLog={(type, cm) => {
           setMetrics(addMeasurement(date, type, cm));
           const g = goals.measurements[type];
@@ -131,6 +145,17 @@ export function ProgressScreen() {
               cardioMin: (existing?.cardioMin ?? 0) + cardioMin,
             }),
           );
+        }}
+      />
+
+      <ShareCard
+        inputs={{
+          streakWeeks: signals.streakWeeks,
+          sessionCount,
+          weekSessions: signals.sessionsThisWeek,
+          weekCardioMin: week.cardioMin,
+          weekSteps: week.steps,
+          stickers,
         }}
       />
     </main>
@@ -193,6 +218,7 @@ function WeightCard({
   trend,
   heightCm,
   pct,
+  units,
   onLog,
   onGoal,
 }: {
@@ -201,32 +227,34 @@ function WeightCard({
   trend: number | null;
   heightCm: number | undefined;
   pct: number | null;
+  units: UnitSystem;
   onLog: (kg: number) => void;
   onGoal: (g: GoalsStore) => void;
 }) {
   const [entry, setEntry] = useState("");
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState(
-    goals.weight ? String(goals.weight.goal) : "",
+    goals.weight ? String(displayWeight(goals.weight.goal, units)) : "",
   );
   const [flooredNote, setFlooredNote] = useState(false);
 
   const g = goals.weight;
+  const unit = weightUnit(units);
 
   function saveGoal() {
-    const raw = Number(goalInput);
-    if (!raw) return;
-    let goal = raw;
+    const rawKg = parseWeight(goalInput, units);
+    if (rawKg === null) return;
+    let goal = rawKg;
     let floored = false;
     if (heightCm) {
-      const clamped = clampWeightGoal(raw, heightCm);
+      const clamped = clampWeightGoal(rawKg, heightCm);
       goal = clamped.goalKg;
       floored = clamped.floored;
     }
     const start = trend ?? g?.start ?? goal;
     onGoal({ ...goals, weight: { start, goal } });
     setFlooredNote(floored);
-    setGoalInput(String(goal));
+    setGoalInput(String(displayWeight(goal, units)));
     setEditingGoal(false);
   }
 
@@ -247,9 +275,14 @@ function WeightCard({
       {g ? (
         <>
           <div className="mt-3 flex items-end justify-between">
-            <RangePoint label="start" value={g.start} unit="kg" />
-            <RangePoint label="trend" value={trend} unit="kg" big />
-            <RangePoint label="goal" value={g.goal} unit="kg" alignEnd />
+            <RangePoint label="start" value={displayWeight(g.start, units)} unit={unit} />
+            <RangePoint
+              label="trend"
+              value={trend !== null ? displayWeight(trend, units) : null}
+              unit={unit}
+              big
+            />
+            <RangePoint label="goal" value={displayWeight(g.goal, units)} unit={unit} alignEnd />
           </div>
           <ProgressBar pct={pct ?? 0} />
           <p className="mt-1.5 text-xs text-ink/50">
@@ -262,7 +295,9 @@ function WeightCard({
         <p className="mt-2 text-sm text-ink/60">
           Weight stays optional. If you'd like a goal, set one below — it can
           never go under the healthy floor for your height
-          {heightCm ? ` (${minHealthyWeightKg(heightCm)} kg)` : ""}.
+          {heightCm
+            ? ` (${displayWeight(minHealthyWeightKg(heightCm), units)} ${unit})`
+            : ""}.
         </p>
       )}
 
@@ -279,12 +314,12 @@ function WeightCard({
             value={goalInput}
             onChange={(e) => setGoalInput(e.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            placeholder="Goal kg"
+            placeholder={`Goal ${unit}`}
             className="font-data w-full flex-1 rounded-xl border border-mist bg-paper px-3 py-3 text-sm outline-none focus:border-moss"
           />
           <button
             onClick={saveGoal}
-            disabled={!Number(goalInput)}
+            disabled={parseWeight(goalInput, units) === null}
             className="rounded-xl bg-moss px-4 py-3 text-sm font-medium text-paper transition-transform active:scale-[0.97] disabled:opacity-40"
           >
             {g ? "Update" : "Set goal"}
@@ -297,18 +332,18 @@ function WeightCard({
           value={entry}
           onChange={(e) => setEntry(e.target.value.replace(/[^\d.]/g, ""))}
           inputMode="decimal"
-          placeholder="Today's weight (kg)"
+          placeholder={`Today's weight (${unit})`}
           className="font-data w-full flex-1 rounded-xl border border-mist bg-paper px-3 py-3 text-sm outline-none focus:border-moss"
         />
         <button
           onClick={() => {
-            const kg = Number(entry);
-            if (kg > 0) {
+            const kg = parseWeight(entry, units);
+            if (kg !== null) {
               onLog(kg);
               setEntry("");
             }
           }}
-          disabled={!Number(entry)}
+          disabled={parseWeight(entry, units) === null}
           className="rounded-xl border border-moss px-4 py-3 text-sm font-medium text-moss transition-transform active:scale-[0.97] disabled:opacity-40"
         >
           Log
@@ -330,17 +365,20 @@ function WeightCard({
 function MeasurementsCard({
   metrics,
   goals,
+  units,
   onLog,
   onGoal,
 }: {
   metrics: MetricsStore;
   goals: GoalsStore;
+  units: UnitSystem;
   onLog: (type: string, cm: number) => void;
   onGoal: (g: GoalsStore) => void;
 }) {
   const [openType, setOpenType] = useState<string | null>(null);
   const [entry, setEntry] = useState("");
   const [goalInput, setGoalInput] = useState("");
+  const unit = lengthUnit(units);
 
   function open(type: string) {
     if (openType === type) {
@@ -350,7 +388,9 @@ function MeasurementsCard({
     setOpenType(type);
     setEntry("");
     setGoalInput(
-      goals.measurements[type] ? String(goals.measurements[type].goal) : "",
+      goals.measurements[type]
+        ? String(displayLength(goals.measurements[type].goal, units))
+        : "",
     );
   }
 
@@ -376,8 +416,8 @@ function MeasurementsCard({
               >
                 <span className="text-sm font-medium">{t.label}</span>
                 <span className="font-data text-sm text-ink/60">
-                  {latest ? `${latest.cm} cm` : "—"}
-                  {g && ` → ${g.goal} cm`}
+                  {latest ? `${displayLength(latest.cm, units)} ${unit}` : "—"}
+                  {g && ` → ${displayLength(g.goal, units)} ${unit}`}
                 </span>
               </button>
               {g && pct !== null && (
@@ -392,18 +432,18 @@ function MeasurementsCard({
                       value={entry}
                       onChange={(e) => setEntry(e.target.value.replace(/[^\d.]/g, ""))}
                       inputMode="decimal"
-                      placeholder={`Today's ${t.label.toLowerCase()} (cm)`}
+                      placeholder={`Today's ${t.label.toLowerCase()} (${unit})`}
                       className="font-data w-full flex-1 rounded-xl border border-mist bg-paper px-3 py-2.5 text-sm outline-none focus:border-moss"
                     />
                     <button
                       onClick={() => {
-                        const cm = Number(entry);
-                        if (cm > 0) {
+                        const cm = parseLength(entry, units);
+                        if (cm !== null) {
                           onLog(t.id, cm);
                           setEntry("");
                         }
                       }}
-                      disabled={!Number(entry)}
+                      disabled={parseLength(entry, units) === null}
                       className="rounded-xl border border-moss px-4 py-2.5 text-sm font-medium text-moss disabled:opacity-40"
                     >
                       Log
@@ -416,13 +456,13 @@ function MeasurementsCard({
                         setGoalInput(e.target.value.replace(/[^\d.]/g, ""))
                       }
                       inputMode="decimal"
-                      placeholder="Goal (cm)"
+                      placeholder={`Goal (${unit})`}
                       className="font-data w-full flex-1 rounded-xl border border-mist bg-paper px-3 py-2.5 text-sm outline-none focus:border-moss"
                     />
                     <button
                       onClick={() => {
-                        const goal = Number(goalInput);
-                        if (!goal) return;
+                        const goal = parseLength(goalInput, units);
+                        if (goal === null) return;
                         const start = latest?.cm ?? g?.start ?? goal;
                         onGoal({
                           ...goals,
@@ -432,7 +472,7 @@ function MeasurementsCard({
                           },
                         });
                       }}
-                      disabled={!Number(goalInput)}
+                      disabled={parseLength(goalInput, units) === null}
                       className="rounded-xl bg-moss px-4 py-2.5 text-sm font-medium text-paper disabled:opacity-40"
                     >
                       {g ? "Update" : "Set goal"}

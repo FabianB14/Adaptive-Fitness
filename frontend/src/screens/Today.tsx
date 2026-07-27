@@ -212,7 +212,7 @@ export function Today() {
       </section>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-ink/35">
-        <span className="font-data">v0.9.0</span>
+        <span className="font-data">v0.10.0</span>
         <span className="font-data">{serverOk ? "server: connected" : "on-device plan"}</span>
       </footer>
     </main>

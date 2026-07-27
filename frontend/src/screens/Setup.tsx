@@ -7,6 +7,14 @@ import {
   type ActivityLevel,
   type Profile,
 } from "../lib/nutrition";
+import {
+  cmToFtIn,
+  ftInToCm,
+  kgToLb,
+  lbToKg,
+  UNIT_OPTIONS,
+  type UnitSystem,
+} from "../lib/units";
 
 const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string }[] = [
   { value: "sedentary", label: "Mostly sitting" },
@@ -44,29 +52,60 @@ export function Setup() {
   const year = new Date().getFullYear();
 
   const [step, setStep] = useState(0);
+  const [units, setUnits] = useState<UnitSystem>(existing?.units ?? "metric");
   const [sex, setSex] = useState<Profile["sex"]>(existing?.sex ?? "male");
   const [age, setAge] = useState(existing ? String(year - existing.birthYear) : "");
   const [height, setHeight] = useState(existing ? String(existing.heightCm) : "");
-  const [weight, setWeight] = useState(existing?.weightKg ? String(existing.weightKg) : "");
+  const [heightFt, setHeightFt] = useState(
+    existing ? String(cmToFtIn(existing.heightCm).ft) : "",
+  );
+  const [heightIn, setHeightIn] = useState(
+    existing ? String(cmToFtIn(existing.heightCm).inches) : "",
+  );
+  const [weight, setWeight] = useState(
+    existing?.weightKg
+      ? String(existing.units === "us" ? kgToLb(existing.weightKg) : existing.weightKg)
+      : "",
+  );
   const [skipWeight, setSkipWeight] = useState(existing ? existing.weightKg === null : false);
   const [activity, setActivity] = useState<ActivityLevel>(existing?.activity ?? "light");
   const [goals, setGoals] = useState<GoalId[]>(existing?.goals ?? []);
   const [pace, setPace] = useState<PlanPace>(existing?.pace ?? "steady");
   const [saved, setSaved] = useState<Profile | null>(null);
 
+  const heightCm =
+    units === "us" ? ftInToCm(Number(heightFt) || 0, Number(heightIn) || 0) : Number(height);
+
   const aboutValid =
-    Number(age) >= 18 && Number(height) >= 100 && (skipWeight || Number(weight) > 0);
+    Number(age) >= 18 && heightCm >= 100 && (skipWeight || Number(weight) > 0);
+
+  function switchUnits(next: UnitSystem) {
+    if (next === units) return;
+    // Convert what's already typed so the numbers keep their meaning.
+    const w = Number(weight);
+    if (w > 0) setWeight(String(next === "us" ? kgToLb(w) : lbToKg(w)));
+    if (next === "us" && Number(height) >= 100) {
+      const f = cmToFtIn(Number(height));
+      setHeightFt(String(f.ft));
+      setHeightIn(String(f.inches));
+    } else if (next === "metric" && Number(heightFt) > 0) {
+      setHeight(String(ftInToCm(Number(heightFt) || 0, Number(heightIn) || 0)));
+    }
+    setUnits(next);
+  }
 
   function finish() {
+    const w = Number(weight);
     const profile: Profile = {
       version: 1,
       sex,
       birthYear: year - Number(age),
-      heightCm: Number(height),
-      weightKg: skipWeight ? null : Number(weight),
+      heightCm,
+      weightKg: skipWeight ? null : units === "us" ? lbToKg(w) : w,
       activity,
       goals,
       pace,
+      units,
     };
     saveProfile(profile);
     markOnboarded();
@@ -103,6 +142,21 @@ export function Setup() {
 
       {step === 0 && (
         <section className="animate-rise space-y-4 [animation-delay:80ms]">
+          <div className="flex rounded-full border border-mist bg-paper p-0.5" role="group" aria-label="Units">
+            {UNIT_OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                aria-pressed={units === o.value}
+                onClick={() => switchUnits(o.value)}
+                className={`flex-1 rounded-full px-3 py-2.5 text-sm transition-colors ${
+                  units === o.value ? "bg-periwinkle text-paper" : "text-ink/60"
+                }`}
+              >
+                {o.label} <span className="opacity-70">({o.hint})</span>
+              </button>
+            ))}
+          </div>
+
           <div className="flex rounded-full border border-mist bg-paper p-0.5" role="group" aria-label="Formula">
             {(["male", "female"] as const).map((s) => (
               <button
@@ -128,20 +182,45 @@ export function Setup() {
                 className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-3 outline-none focus:border-moss"
               />
             </label>
-            <label className="text-sm">
-              <span className="text-xs text-ink/50">Height (cm)</span>
-              <input
-                value={height}
-                onChange={(e) => setHeight(e.target.value.replace(/\D/g, ""))}
-                inputMode="numeric"
-                className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-3 outline-none focus:border-moss"
-              />
-            </label>
+            {units === "us" ? (
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <label>
+                  <span className="text-xs text-ink/50">Height (ft)</span>
+                  <input
+                    value={heightFt}
+                    onChange={(e) => setHeightFt(e.target.value.replace(/\D/g, ""))}
+                    inputMode="numeric"
+                    className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-3 outline-none focus:border-moss"
+                  />
+                </label>
+                <label>
+                  <span className="text-xs text-ink/50">(in)</span>
+                  <input
+                    value={heightIn}
+                    onChange={(e) => setHeightIn(e.target.value.replace(/\D/g, ""))}
+                    inputMode="numeric"
+                    className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-3 outline-none focus:border-moss"
+                  />
+                </label>
+              </div>
+            ) : (
+              <label className="text-sm">
+                <span className="text-xs text-ink/50">Height (cm)</span>
+                <input
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value.replace(/\D/g, ""))}
+                  inputMode="numeric"
+                  className="font-data mt-1 w-full rounded-xl border border-mist bg-card px-3 py-3 outline-none focus:border-moss"
+                />
+              </label>
+            )}
           </div>
 
           {!skipWeight && (
             <label className="block text-sm">
-              <span className="text-xs text-ink/50">Weight (kg)</span>
+              <span className="text-xs text-ink/50">
+                Weight ({units === "us" ? "lb" : "kg"})
+              </span>
               <input
                 value={weight}
                 onChange={(e) => setWeight(e.target.value.replace(/[^\d.]/g, ""))}

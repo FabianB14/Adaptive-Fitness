@@ -8,6 +8,7 @@
  */
 
 import { type GoalId, type PlanPace } from "./goals";
+import { type UnitSystem } from "./units";
 
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "high";
 
@@ -24,6 +25,8 @@ export interface Profile {
   /** How hard to push. Affects deficit size and progression speed —
       never the safety floors. */
   pace?: PlanPace;
+  /** Display units only — storage stays metric everywhere. */
+  units?: UnitSystem;
 }
 
 export interface MealEntry {
@@ -100,8 +103,8 @@ export function loadProfile(): Profile | null {
     if (!raw) return null;
     const p = JSON.parse(raw) as Profile;
     if (p.version !== 1) return null;
-    // Older profiles predate goals/pace.
-    return { goals: [], pace: "steady", ...p };
+    // Older profiles predate goals/pace/units.
+    return { goals: [], pace: "steady", units: "metric", ...p };
   } catch {
     return null;
   }

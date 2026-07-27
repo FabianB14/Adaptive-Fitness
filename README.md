@@ -103,5 +103,5 @@ else runs on-device.
 6b. ✅ **Goal intake & polish** — setup wizard (stats → goals → pace) driving calories and goal-weighted plans; running/cardio additions; line-figure pose illustrations on every exercise
 7. ✅ **Medical upload** — `/extract` endpoint (Claude reads PDFs/photos in memory, never stores them), plain-language review with per-item toggles at `#/upload`, restriction-only merge into constraints
 7b. ✅ **Progress & rewards** *(client request)* — Progress tab: starting → trend → goal for weight (goal clamped to a healthy-BMI floor) and tape measurements, weekly steps/cardio tracking with gentle system-set targets, and an emoji sticker shelf where rewards only ever add — no lost stars, no shame states
-8. Share cards
+8. ✅ **Share cards** — body-free by construction: canvas-rendered cards (streaks, sessions, stickers, movement — never weight, measurements, or calories) shared through the native share sheet with a PNG download fallback. US units (lb, ft/in, inches) landed alongside as a display-only layer — storage stays metric, so switching is instant and lossless.
 9. Push notifications

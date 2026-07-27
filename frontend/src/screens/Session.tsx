@@ -14,6 +14,7 @@ import {
   suggestion,
   type SessionResult,
 } from "../lib/progress";
+import { displayWeight, parseWeight, weightUnit, type UnitSystem } from "../lib/units";
 
 type TierKey = "full" | "light" | "minimum";
 
@@ -24,7 +25,7 @@ const TIER_NAMES: Record<TierKey, string> = {
 };
 
 interface ItemState {
-  loadKg: string; // input text
+  loadKg: string; // input text, in the user's display unit
   done: number;
   rpe?: number;
 }
@@ -91,6 +92,8 @@ export function Session({ tier }: { tier: TierKey }) {
   const signals = useMemo(() => daySignals(loadLogs(), date), [date]);
   const profile = useMemo(() => loadProfile(), []);
   const pace = profile?.pace ?? "steady";
+  const units: UnitSystem = profile?.units ?? "metric";
+  const unit = weightUnit(units);
   const plan = useMemo(
     () =>
       generatePlan(
@@ -110,7 +113,7 @@ export function Session({ tier }: { tier: TierKey }) {
     for (const item of items) {
       const sug = suggestion(item.exercise.slug, exStates, signals.multiplier, date, pace);
       init[item.exercise.slug] = stored[item.exercise.slug] ?? {
-        loadKg: sug.loadKg != null ? String(sug.loadKg) : "",
+        loadKg: sug.loadKg != null ? String(displayWeight(sug.loadKg, units)) : "",
         done: 0,
       };
     }
@@ -131,12 +134,11 @@ export function Session({ tier }: { tier: TierKey }) {
   function finish() {
     const results: SessionResult[] = items.map((i) => {
       const s = state[i.exercise.slug];
-      const load = parseFloat(s?.loadKg ?? "");
       return {
         slug: i.exercise.slug,
         setsPlanned: i.sets,
         setsDone: s?.done ?? 0,
-        loadKg: Number.isFinite(load) && load > 0 ? load : null,
+        loadKg: parseWeight(s?.loadKg ?? "", units),
         rpe: s?.rpe,
       };
     });
@@ -250,9 +252,9 @@ export function Session({ tier }: { tier: TierKey }) {
                       inputMode="decimal"
                       placeholder="—"
                       className="font-data w-16 rounded-lg border border-mist bg-paper px-2 py-1.5 text-center text-sm outline-none focus:border-moss"
-                      aria-label={`${item.exercise.name} load in kilograms`}
+                      aria-label={`${item.exercise.name} load in ${unit === "lb" ? "pounds" : "kilograms"}`}
                     />
-                    kg
+                    {unit}
                   </label>
                 ) : (
                   <span />
