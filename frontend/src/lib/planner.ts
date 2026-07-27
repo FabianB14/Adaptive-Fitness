@@ -13,6 +13,8 @@ export interface PlannedItem {
   exercise: Exercise;
   /** Display dose, e.g. "3 × 8", "2 min". */
   dose: string;
+  /** Loggable sets for the session view (timed work = 1 "set"). */
+  sets: number;
   /** Present when the dose was softened because the exercise touches an
       easing region. */
   note?: string;
@@ -70,15 +72,23 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-function dose(e: Exercise, tier: "full" | "light" | "minimum"): string {
+function dose(
+  e: Exercise,
+  tier: "full" | "light" | "minimum",
+): { text: string; sets: number } {
   if (e.movement_pattern === "gait") {
     // Named durations ("10-minute walk") keep their own dose.
-    return tier === "full" ? "15 min" : tier === "light" ? "10 min" : "5 min";
+    return {
+      text: tier === "full" ? "15 min" : tier === "light" ? "10 min" : "5 min",
+      sets: 1,
+    };
   }
   if (e.movement_pattern === "mobility") {
-    return tier === "minimum" ? "1–2 min" : "2 min";
+    return { text: tier === "minimum" ? "1–2 min" : "2 min", sets: 1 };
   }
-  return tier === "full" ? "3 × 8" : tier === "light" ? "2 × 8" : "1 × 10";
+  const sets = tier === "full" ? 3 : tier === "light" ? 2 : 1;
+  const reps = tier === "minimum" ? 10 : 8;
+  return { text: `${sets} × ${reps}`, sets };
 }
 
 const TIER_PREFERENCE: Record<string, string[]> = {
@@ -93,6 +103,7 @@ function pickForTier(
   slots: string[][],
   tier: "full" | "light" | "minimum",
   rand: () => number,
+  avoid: Set<string>,
 ): PlannedItem[] {
   const chosen: PlannedItem[] = [];
   const used = new Set<string>();
@@ -100,9 +111,13 @@ function pickForTier(
   for (const slot of slots) {
     let candidates: Exercise[] = [];
     for (const pattern of slot) {
-      candidates = pool.filter(
+      const inPattern = pool.filter(
         (e) => e.movement_pattern === pattern && !used.has(e.slug),
       );
+      // Engine swaps (skipped twice / reduced twice) route around a slug —
+      // but never at the cost of emptying the slot entirely.
+      const withoutAvoided = inPattern.filter((e) => !avoid.has(e.slug));
+      candidates = withoutAvoided.length > 0 ? withoutAvoided : inPattern;
       if (candidates.length > 0) break;
     }
     if (candidates.length === 0) continue; // constraint closed this slot; skip quietly
@@ -123,9 +138,11 @@ function pickForTier(
     used.add(exercise.slug);
 
     const eased = loadsEasingRegion(exercise, c);
+    const d = dose(exercise, tier);
     chosen.push({
       exercise,
-      dose: dose(exercise, tier),
+      dose: d.text,
+      sets: d.sets,
       note: eased ? "keep this one gentle" : undefined,
     });
   }
@@ -136,6 +153,7 @@ export function generatePlan(
   c: Constraints,
   dateISO: string,
   pool: Exercise[] = fullPool,
+  avoidSlugs: Set<string> = new Set(),
 ): DayPlan {
   const allowed = filterPool(pool, c);
   const rand = mulberry32(
@@ -154,9 +172,9 @@ export function generatePlan(
 
   return {
     date: dateISO,
-    full: pickForTier(allowed, c, FULL_SLOTS, "full", rand),
-    light: pickForTier(allowed, c, LIGHT_SLOTS, "light", rand),
-    minimum: pickForTier(allowed, c, MINIMUM_SLOTS, "minimum", rand),
+    full: pickForTier(allowed, c, FULL_SLOTS, "full", rand, avoidSlugs),
+    light: pickForTier(allowed, c, LIGHT_SLOTS, "light", rand, avoidSlugs),
+    minimum: pickForTier(allowed, c, MINIMUM_SLOTS, "minimum", rand, avoidSlugs),
     notes,
   };
 }

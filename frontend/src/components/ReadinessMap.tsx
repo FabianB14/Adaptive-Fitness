@@ -101,7 +101,14 @@ function loadSex(): Sex {
  * front/back) whose regions tint by constraint state: moss = clear,
  * ochre = easing, mist = resting. Tap a part to hear why in one sentence.
  */
-export function ReadinessMap({ constraints }: { constraints: Constraints }) {
+export function ReadinessMap({
+  constraints,
+  onReportPain,
+}: {
+  constraints: Constraints;
+  /** When provided, a selected non-resting region offers "this hurts today". */
+  onReportPain?: (region: string) => void;
+}) {
   const [selected, setSelected] = useState<string | null>(null);
   const [view, setView] = useState<View>("front");
   const [sex, setSex] = useState<Sex>(() => loadSex());
@@ -232,6 +239,17 @@ export function ReadinessMap({ constraints }: { constraints: Constraints }) {
 
       <figcaption className="mx-auto mt-3 min-h-10 max-w-xs text-center text-sm text-ink/60">
         {selected ? explainRegion(selected, states[selected] ?? "clear") : summary}
+        {selected && onReportPain && states[selected] !== "suppressed" && (
+          <button
+            onClick={() => {
+              onReportPain(selected);
+              setSelected(null);
+            }}
+            className="mx-auto mt-2 block rounded-full border border-ochre px-4 py-2 text-xs text-ochre transition-colors active:bg-ochre active:text-paper"
+          >
+            This hurts today — rest it for a week
+          </button>
+        )}
       </figcaption>
 
       <div className="flex items-center justify-center gap-4 text-[11px] text-ink/50">

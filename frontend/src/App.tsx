@@ -6,6 +6,7 @@ import { Food } from "./screens/Food";
 import { InstallGate } from "./screens/InstallGate";
 import { Library } from "./screens/Library";
 import { OpenInSafari } from "./screens/OpenInSafari";
+import { Session } from "./screens/Session";
 import { Today } from "./screens/Today";
 
 const INSTALL_GATE_DISMISSED_KEY = "af.installGate.dismissed";
@@ -42,7 +43,13 @@ export default function App() {
     );
   }
 
-  const screen = route.startsWith("#/library") ? (
+  const sessionMatch = route.match(/^#\/session\/(full|light|minimum)/);
+  const screen = sessionMatch ? (
+    <Session
+      key={sessionMatch[1]}
+      tier={sessionMatch[1] as "full" | "light" | "minimum"}
+    />
+  ) : route.startsWith("#/library") ? (
     <Library />
   ) : route.startsWith("#/constraints") ? (
     <ConstraintsScreen />

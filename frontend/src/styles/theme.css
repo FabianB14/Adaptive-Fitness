@@ -21,6 +21,7 @@
 
   --animate-rise: rise 0.55s var(--ease-spring) both;
   --animate-draw-in: draw-in 0.8s ease-out both;
+  --animate-pop: pop 0.45s var(--ease-spring) both;
 
   @keyframes rise {
     from {
@@ -39,6 +40,22 @@
     }
     to {
       opacity: 1;
+      transform: scale(1);
+    }
+  }
+  /* Set completion: a weighted spring with slight overshoot — since iOS
+     Safari has no haptics, this landing IS the tactile feedback. */
+  @keyframes pop {
+    0% {
+      transform: scale(0.8);
+    }
+    45% {
+      transform: scale(1.22);
+    }
+    75% {
+      transform: scale(0.96);
+    }
+    100% {
       transform: scale(1);
     }
   }

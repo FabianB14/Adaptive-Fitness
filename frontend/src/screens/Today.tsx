@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { ReadinessMap } from "../components/ReadinessMap";
-import { loadConstraints } from "../lib/constraints";
+import { loadConstraints, REGION_LABELS } from "../lib/constraints";
 import { daySignals, effectiveConstraints } from "../lib/engine";
 import { API_BASE } from "../lib/env";
-import { addLog, loadLogs, loadPainEvents, removeLog, type SessionLog, type TierChoice } from "../lib/logs";
+import { addLog, addPainEvent, loadLogs, loadPainEvents, removeLog, type PainEvent, type SessionLog, type TierChoice } from "../lib/logs";
 import { generatePlan, type PlannedItem } from "../lib/planner";
+import { loadStates, slugsToAvoid } from "../lib/progress";
 import {
   isFirebaseConfigured,
   signIn,
@@ -44,14 +45,19 @@ export function Today() {
   const [serverOk, setServerOk] = useState(false);
   const [openTier, setOpenTier] = useState<TierKey | null>(null);
   const [logs, setLogs] = useState<SessionLog[]>(() => loadLogs());
+  const [painEvents, setPainEvents] = useState<PainEvent[]>(() => loadPainEvents());
+  const [painNote, setPainNote] = useState<string | null>(null);
 
   const date = todayISO();
   const baseConstraints = useMemo(() => loadConstraints(), []);
   const constraints = useMemo(
-    () => effectiveConstraints(baseConstraints, loadPainEvents(), date),
-    [baseConstraints, date],
+    () => effectiveConstraints(baseConstraints, painEvents, date),
+    [baseConstraints, painEvents, date],
   );
-  const plan = useMemo(() => generatePlan(constraints, date), [constraints, date]);
+  const plan = useMemo(
+    () => generatePlan(constraints, date, undefined, slugsToAvoid(loadStates())),
+    [constraints, date],
+  );
   const signals = useMemo(() => daySignals(logs, date), [logs, date]);
   const todayLog = logs.find((l) => l.date === date);
 
@@ -132,8 +138,21 @@ export function Today() {
           </a>
         </div>
         <div className="mt-2">
-          <ReadinessMap constraints={constraints} />
+          <ReadinessMap
+            constraints={constraints}
+            onReportPain={(region) => {
+              setPainEvents(addPainEvent(date, region));
+              setPainNote(
+                `${REGION_LABELS[region] ?? region} gets a week off. Today's plan already works around it.`,
+              );
+            }}
+          />
         </div>
+        {painNote && (
+          <p className="mt-3 rounded-2xl bg-ochre/10 px-4 py-3 text-center text-sm text-ochre">
+            {painNote}
+          </p>
+        )}
       </section>
 
       {/* The three-tier day */}
@@ -185,7 +204,7 @@ export function Today() {
       </section>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-ink/35">
-        <span className="font-data">v0.5.0</span>
+        <span className="font-data">v0.6.0</span>
         <span className="font-data">{serverOk ? "server: connected" : "on-device plan"}</span>
       </footer>
     </main>
@@ -278,12 +297,20 @@ function TierCard({
           </ul>
 
           {items.length > 0 && !asking && (
-            <button
-              onClick={() => setAsking(true)}
-              className="mt-4 w-full rounded-xl bg-moss px-5 py-3 font-medium text-paper transition-transform active:scale-[0.98]"
-            >
-              Log {tier.name.toLowerCase()} day
-            </button>
+            <div className="mt-4 space-y-2">
+              <a
+                href={`#/session/${tier.key}`}
+                className="block w-full rounded-xl bg-moss px-5 py-3 text-center font-medium text-paper transition-transform active:scale-[0.98]"
+              >
+                Start {tier.name.toLowerCase()} session
+              </a>
+              <button
+                onClick={() => setAsking(true)}
+                className="w-full py-1 text-center text-xs text-ink/50 underline-offset-2 hover:underline"
+              >
+                or log the day without tracking sets
+              </button>
+            </div>
           )}
 
           {asking && (

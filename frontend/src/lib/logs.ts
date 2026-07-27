@@ -5,12 +5,22 @@
  */
 export type TierChoice = "full" | "light" | "minimum" | "rest";
 
+export interface LoggedExercise {
+  slug: string;
+  setsPlanned: number;
+  setsDone: number;
+  loadKg: number | null;
+  rpe?: number;
+}
+
 export interface SessionLog {
   id: string;
   date: string; // YYYY-MM-DD, local
   tier: TierChoice;
   /** Session RPE 1–10. Absent for rest days or when the user skips the question. */
   rpe?: number;
+  /** Per-exercise detail when the session was logged set by set. */
+  exercises?: LoggedExercise[];
   loggedAt: string;
 }
 
@@ -43,13 +53,19 @@ export function loadLogs(): SessionLog[] {
   return read<SessionLog>(LOGS_KEY);
 }
 
-export function addLog(date: string, tier: TierChoice, rpe?: number): SessionLog[] {
+export function addLog(
+  date: string,
+  tier: TierChoice,
+  rpe?: number,
+  exercises?: LoggedExercise[],
+): SessionLog[] {
   const logs = loadLogs().filter((l) => l.date !== date); // one log per day
   logs.push({
     id: crypto.randomUUID(),
     date,
     tier,
     rpe,
+    exercises,
     loggedAt: new Date().toISOString(),
   });
   logs.sort((a, b) => a.date.localeCompare(b.date));
