@@ -62,6 +62,23 @@ export function ConstraintsScreen() {
         </p>
       </header>
 
+      <a
+        href="#/upload"
+        className="animate-rise flex items-center justify-between rounded-3xl border border-mist bg-card p-4 shadow-sm transition-transform active:scale-[0.99] [animation-delay:40ms]"
+      >
+        <span>
+          <span className="block text-sm font-medium">
+            Have medical paperwork?
+          </span>
+          <span className="block text-xs text-ink/50">
+            Upload it and we'll read your limits for you — then it's deleted.
+          </span>
+        </span>
+        <span className="font-data shrink-0 rounded-full bg-moss/10 px-3 py-1.5 text-xs text-moss">
+          Upload
+        </span>
+      </a>
+
       <section className="animate-rise space-y-3 [animation-delay:80ms]">
         <h2 className="font-display text-lg font-semibold">Body regions</h2>
         <p className="text-sm text-ink/60">

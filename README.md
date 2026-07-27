@@ -64,6 +64,22 @@ uvicorn app.main:app --reload   # http://localhost:8000, health at /health
 pytest                          # run tests
 ```
 
+### Deploying the backend on Render
+
+Create a **Web Service** from this repo with:
+
+| Setting | Value |
+|---|---|
+| Root Directory | `backend` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| Env var | `ANTHROPIC_API_KEY` = your Anthropic API key |
+
+Then open the app → Limits → **Upload** and paste the Render URL once
+("Connect server"). The URL is remembered on the device — no rebuild needed.
+Document extraction is the only feature that requires the server; everything
+else runs on-device.
+
 ## Documentation
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — proposed data model, the
@@ -79,6 +95,6 @@ pytest                          # run tests
 5. ✅ **Nutrition** *(pulled ahead at client request)* — Food tab with calorie ring, Mifflin-St Jeor targets with hard safety floors, portion-based diary, fully usable without tracking weight. Dark mode and the human-figure Readiness Map (man/woman, front/back) landed alongside.
 6. ✅ **Session view** — set-by-set logging with remembered loads and engine suggestions, per-exercise RPE, skip-twice→swap plumbing, pain reporting from the body figure
 6b. ✅ **Goal intake & polish** — setup wizard (stats → goals → pace) driving calories and goal-weighted plans; running/cardio additions; line-figure pose illustrations on every exercise
-7. Medical upload — extraction pipeline on top of the working constraint model
+7. ✅ **Medical upload** — `/extract` endpoint (Claude reads PDFs/photos in memory, never stores them), plain-language review with per-item toggles at `#/upload`, restriction-only merge into constraints
 8. Share cards
 9. Push notifications

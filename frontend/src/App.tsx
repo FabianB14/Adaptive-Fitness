@@ -9,6 +9,7 @@ import { OpenInSafari } from "./screens/OpenInSafari";
 import { Session } from "./screens/Session";
 import { isOnboarded, Setup } from "./screens/Setup";
 import { Today } from "./screens/Today";
+import { Upload } from "./screens/Upload";
 
 const INSTALL_GATE_DISMISSED_KEY = "af.installGate.dismissed";
 
@@ -61,6 +62,8 @@ export default function App() {
     <ConstraintsScreen />
   ) : route.startsWith("#/food") ? (
     <Food />
+  ) : route.startsWith("#/upload") ? (
+    <Upload />
   ) : (
     <Today />
   );

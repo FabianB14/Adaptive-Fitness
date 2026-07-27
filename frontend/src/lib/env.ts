@@ -46,5 +46,27 @@ export function detectEnv(
   return { isIOS, isIOSSafari, isInAppBrowser, isStandalone };
 }
 
-export const API_BASE: string | undefined =
-  import.meta.env.VITE_API_BASE || undefined;
+const API_BASE_KEY = "af.apibase.v1";
+
+/** Backend base URL: a runtime override (set in the app, survives without a
+    rebuild — how the Render URL gets in) wins over the build-time env var. */
+export function getApiBase(): string | undefined {
+  try {
+    const stored = localStorage.getItem(API_BASE_KEY);
+    if (stored) return stored.replace(/\/+$/, "");
+  } catch {
+    // Fall through to the build-time value.
+  }
+  return (import.meta.env.VITE_API_BASE as string | undefined) || undefined;
+}
+
+export function setApiBase(url: string): void {
+  try {
+    if (url.trim()) localStorage.setItem(API_BASE_KEY, url.trim());
+    else localStorage.removeItem(API_BASE_KEY);
+  } catch {
+    // Storage unavailable — the value just won't persist.
+  }
+}
+
+export const API_BASE: string | undefined = getApiBase();
