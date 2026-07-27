@@ -1,0 +1,23 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """App configuration. Everything comes from the environment; nothing
+    secret lives in the repo. Postgres, S3, Firebase Admin, and Anthropic
+    settings are added in the build steps that use them."""
+
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="AF_")
+
+    app_name: str = "Adaptive Fitness API"
+    version: str = "0.1.0"
+    # Comma-separated list of allowed browser origins.
+    cors_origins: str = (
+        "http://localhost:5173,https://fabianb14.github.io"
+    )
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+
+settings = Settings()
