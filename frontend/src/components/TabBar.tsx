@@ -17,7 +17,11 @@ const TABS: Tab[] = [
   {
     href: "#/",
     label: "Today",
-    isActive: (r) => !r.startsWith("#/library") && !r.startsWith("#/constraints"),
+    isActive: (r) =>
+      !r.startsWith("#/library") &&
+      !r.startsWith("#/constraints") &&
+      !r.startsWith("#/food") &&
+      !r.startsWith("#/progress"),
     icon: (a) => (
       <svg viewBox="0 0 24 24" className="h-6 w-6" {...stroke(a)}>
         <path d="M4 11.5 12 5l8 6.5" />
@@ -33,6 +37,16 @@ const TABS: Tab[] = [
       <svg viewBox="0 0 24 24" className="h-6 w-6" {...stroke(a)}>
         <path d="M12 8.5c-4.5-3.5-9 .5-7 5.5s5.5 6 7 4.5c1.5 1.5 5-.5 7-4.5s-2.5-9-7-5.5Z" />
         <path d="M12 8.5V6c0-1.5 1-2.5 2.5-2.5" />
+      </svg>
+    ),
+  },
+  {
+    href: "#/progress",
+    label: "Progress",
+    isActive: (r) => r.startsWith("#/progress"),
+    icon: (a) => (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" {...stroke(a)}>
+        <path d="M4 19.5V13M9.5 19.5V8M15 19.5v-8.5M20.5 19.5v-15" />
       </svg>
     ),
   },

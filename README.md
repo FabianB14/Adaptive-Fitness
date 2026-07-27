@@ -102,5 +102,6 @@ else runs on-device.
 6. ✅ **Session view** — set-by-set logging with remembered loads and engine suggestions, per-exercise RPE, skip-twice→swap plumbing, pain reporting from the body figure
 6b. ✅ **Goal intake & polish** — setup wizard (stats → goals → pace) driving calories and goal-weighted plans; running/cardio additions; line-figure pose illustrations on every exercise
 7. ✅ **Medical upload** — `/extract` endpoint (Claude reads PDFs/photos in memory, never stores them), plain-language review with per-item toggles at `#/upload`, restriction-only merge into constraints
+7b. ✅ **Progress & rewards** *(client request)* — Progress tab: starting → trend → goal for weight (goal clamped to a healthy-BMI floor) and tape measurements, weekly steps/cardio tracking with gentle system-set targets, and an emoji sticker shelf where rewards only ever add — no lost stars, no shame states
 8. Share cards
 9. Push notifications

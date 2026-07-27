@@ -6,6 +6,7 @@ import { Food } from "./screens/Food";
 import { InstallGate } from "./screens/InstallGate";
 import { Library } from "./screens/Library";
 import { OpenInSafari } from "./screens/OpenInSafari";
+import { ProgressScreen } from "./screens/Progress";
 import { Session } from "./screens/Session";
 import { isOnboarded, Setup } from "./screens/Setup";
 import { Today } from "./screens/Today";
@@ -62,6 +63,8 @@ export default function App() {
     <ConstraintsScreen />
   ) : route.startsWith("#/food") ? (
     <Food />
+  ) : route.startsWith("#/progress") ? (
+    <ProgressScreen />
   ) : route.startsWith("#/upload") ? (
     <Upload />
   ) : (
