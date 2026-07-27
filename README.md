@@ -19,11 +19,11 @@ Distribution is a URL. Users open it in Safari on iPhone and use
 The frontend deploys to GitHub Pages:
 **https://fabianb14.github.io/Adaptive-Fitness/**
 
-Deployment runs from `.github/workflows/pages.yml` on every push to `production`.
-The first run enables Pages automatically (the workflow has `pages: write`
-permission and uses `actions/configure-pages` with `enablement: true`). If that
-first run fails with a permissions error, enable it once by hand:
-*Settings → Pages → Source: GitHub Actions*, then re-run the workflow.
+Deployment runs from `.github/workflows/pages.yml` on every push to
+`production`: the workflow builds the frontend and pushes the result to the
+`gh-pages` branch, which GitHub Pages serves automatically. If the site ever
+shows as disabled, point it back by hand: *Settings → Pages → Deploy from a
+branch → `gh-pages` / root*.
 
 > GitHub Pages hosts static files only. It serves the PWA frontend; the FastAPI
 > backend deploys separately (DigitalOcean App Platform, per the brief). Until a

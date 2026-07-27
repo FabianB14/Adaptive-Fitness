@@ -5,10 +5,12 @@ on:
     branches: [production, fabian-branch]
   workflow_dispatch:
 
+# Deploys by pushing the built site to the gh-pages branch. The Actions
+# token can't create a Pages site via the API ("Resource not accessible by
+# integration"), but GitHub enables Pages automatically for a gh-pages
+# branch — no repo-settings step needed.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -38,28 +40,9 @@ jobs:
         working-directory: frontend
         run: cp dist/index.html dist/404.html
 
-      # enablement: true creates the Pages site on first run so nobody has
-      # to click through repo settings.
-      - name: Configure Pages
+      - name: Deploy to gh-pages
         if: github.ref == 'refs/heads/production'
-        uses: actions/configure-pages@v5
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
-
-      - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/production'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: frontend/dist
-
-  deploy:
-    if: github.ref == 'refs/heads/production'
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: frontend/dist
