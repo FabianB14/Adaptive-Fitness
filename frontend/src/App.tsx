@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { detectEnv } from "./lib/env";
+import { ConstraintsScreen } from "./screens/Constraints";
 import { InstallGate } from "./screens/InstallGate";
 import { Library } from "./screens/Library";
 import { OpenInSafari } from "./screens/OpenInSafari";
@@ -40,6 +41,7 @@ export default function App() {
   }
 
   if (route.startsWith("#/library")) return <Library />;
+  if (route.startsWith("#/constraints")) return <ConstraintsScreen />;
 
   return <Today />;
 }

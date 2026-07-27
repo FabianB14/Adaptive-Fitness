@@ -74,7 +74,7 @@ pytest                          # run tests
 
 1. ✅ **Scaffold** — repo, stack, deploy pipeline, Firebase auth wiring, installable PWA shell
 2. ✅ **Exercise library** — `shared/` vocabulary + 132-exercise seed, `/exercises` API with constraint-shaped filters, library browser at `#/library`
-3. Manual constraint entry — constraint model + editor, plan generation without AI
+3. ✅ **Manual constraint entry** — constraint editor at `#/constraints`, deterministic on-device plan generation, live Readiness Map, vitest suite in CI
 4. Adaptive engine — deterministic rules with unit tests for every row
 5. Three-tier daily view — core loop, logging, the Readiness Map
 6. Medical upload — extraction pipeline on top of the working constraint model

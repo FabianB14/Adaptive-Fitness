@@ -206,6 +206,31 @@ Two additions the table is missing:
   can scale the window later (mild 4d / moderate 7d / severe 14d + suggest
   provider) — the schema's `expires_at` supports this already.
 
+## Where computation lives (and when a backend becomes mandatory)
+
+Steps 3–5 run **entirely on-device**: constraints persist locally
+(localStorage now, IndexedDB when the write queue lands) and the plan
+generator is a deterministic filter that runs in the browser. The Pages
+deploy is a fully working app without any server.
+
+The backend becomes mandatory at exactly these points, in build order:
+
+1. **Step 6 — medical upload.** Anthropic API keys cannot ship in a browser
+   bundle; extraction must be proxied server-side. Document storage and
+   deletion also live there.
+2. **Cross-device durability.** iOS can evict PWA storage for unused apps.
+   Local-only data is acceptable for a demo, not for real users — Postgres
+   becomes the source of truth and the client becomes cache + write queue.
+3. **Step 9 — push notifications** and any server-side scheduling.
+4. **Coach-voice copy** (Anthropic-written sentences) — same key problem as
+   extraction; the client only ever reads cached copy from the API.
+
+When the backend deploys, plan generation moves server-side per the brief
+(no background sync on iOS PWAs → the server prepares the day), and the
+on-device generator that steps 3–5 build stays as the offline fallback.
+Same shared vocabulary, same filter semantics — already implemented twice
+(Python + TS) against the same seed and tested on both sides.
+
 ## Step-1 scaffold (built)
 
 - `frontend/` — Vite + React + TS + Tailwind v4, PWA manifest + service worker,
