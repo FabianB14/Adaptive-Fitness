@@ -70,10 +70,16 @@ Create a **Web Service** from this repo with:
 
 | Setting | Value |
 |---|---|
+| Branch | `production` (the default branch — always current) |
 | Root Directory | `backend` |
 | Build Command | `pip install -r requirements.txt` |
 | Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 | Env var | `ANTHROPIC_API_KEY` = your Anthropic API key |
+
+If Root Directory is left blank, the root-level `requirements.txt` shim makes
+the build work anyway — but then the Start Command must be:
+`cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+Python is pinned to 3.12 via `.python-version`.
 
 Then open the app → Limits → **Upload** and paste the Render URL once
 ("Connect server"). The URL is remembered on the device — no rebuild needed.
