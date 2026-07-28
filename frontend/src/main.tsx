@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import { getApiBase } from "./lib/env";
+// Side-effect import: captures Chrome's beforeinstallprompt before mount.
+import "./lib/install";
 import { resubscribeIfEnabled } from "./lib/push";
 import { applyTheme } from "./lib/theme";
 import "./styles/theme.css";

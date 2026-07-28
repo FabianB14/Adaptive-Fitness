@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { InstallPrompt } from "../components/InstallPrompt";
 import { ReadinessMap } from "../components/ReadinessMap";
 import { loadConstraints, REGION_LABELS } from "../lib/constraints";
 import { daySignals, effectiveConstraints } from "../lib/engine";
@@ -112,6 +113,8 @@ export function Today() {
           ) : null)}
       </header>
 
+      <InstallPrompt />
+
       {/* Stat tiles */}
       <section className="animate-rise grid grid-cols-3 gap-2.5 [animation-delay:80ms]" aria-label="Your week">
         <StatTile value={String(signals.streakWeeks)} unit={signals.streakWeeks === 1 ? "week" : "weeks"} label="streak" />
@@ -212,7 +215,7 @@ export function Today() {
       </section>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-ink/35">
-        <span className="font-data">v0.12.0</span>
+        <span className="font-data">v0.12.1</span>
         <span className="font-data">{serverOk ? "server: connected" : "on-device plan"}</span>
       </footer>
     </main>

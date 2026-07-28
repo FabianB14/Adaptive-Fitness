@@ -173,6 +173,11 @@ def send_push(subscription: dict[str, Any], title: str, body: str) -> bool:
         else:
             logger.warning("Push delivery failed: %s", exc)
         return False
+    except (ValueError, TypeError) as exc:
+        # Malformed subscription keys can never succeed — prune, don't retry.
+        logger.warning("Unusable push subscription pruned: %s", exc)
+        remove_subscription(subscription.get("endpoint", ""))
+        return False
 
 
 def send_due_reminders(now_utc: datetime | None = None) -> int:

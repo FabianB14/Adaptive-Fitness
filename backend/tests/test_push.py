@@ -93,6 +93,17 @@ def test_preview_returns_todays_message():
     assert body["title"] and body["body"]
 
 
+def test_malformed_subscription_returns_502_not_500(monkeypatch):
+    # A garbage p256dh key makes pywebpush raise ValueError during
+    # encryption; the endpoint must degrade gracefully and prune the sub.
+    monkeypatch.setattr(settings, "vapid_public_key", "pk")
+    monkeypatch.setattr(settings, "vapid_private_key", "sk")
+    push.upsert_subscription(SUB, 9, -420)
+    r = client.post("/push/hello", json={"endpoint": SUB["endpoint"]})
+    assert r.status_code == 502
+    assert push.load_subscriptions() == []  # unusable sub was pruned
+
+
 def test_scheduler_sends_and_marks(monkeypatch):
     monkeypatch.setattr(settings, "vapid_public_key", "pk")
     monkeypatch.setattr(settings, "vapid_private_key", "sk")
