@@ -76,9 +76,10 @@ Create a **Web Service** from this repo with:
 | Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 | Env var | `ANTHROPIC_API_KEY` = your Anthropic API key |
 
-If Root Directory is left blank, the root-level `requirements.txt` shim makes
-the build work anyway — but then the Start Command must be:
-`cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+If Root Directory is left blank, the repo still deploys as-is: the root
+`requirements.txt` forwards to `backend/requirements.txt` for the build, and
+the root `app/` package forwards `uvicorn app.main:app` to `backend/app` for
+the start command. No settings changes needed either way.
 Python is pinned to 3.12 via `.python-version`.
 
 Then open the app → Limits → **Upload** and paste the Render URL once
