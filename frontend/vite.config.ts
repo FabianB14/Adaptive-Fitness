@@ -20,6 +20,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      // Custom worker (src/sw.ts): precached shell + Web Push handlers.
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
@@ -44,12 +48,11 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         // iOS can evict PWA storage at any time; the cache is a convenience,
         // never the source of truth. Precache the shell, network-first for
         // everything else.
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        navigateFallback: `${base}index.html`,
       },
     }),
   ],

@@ -10,6 +10,7 @@ import {
   type RegionState,
   type RomLevel,
 } from "../lib/constraints";
+import { Reminders } from "../components/Reminders";
 import { filterPool } from "../lib/filter";
 import { exercises, vocabulary } from "../lib/library";
 import { getThemePref, setThemePref, type ThemePref } from "../lib/theme";
@@ -261,6 +262,11 @@ export function ConstraintsScreen() {
             Auto follows your phone's setting.
           </p>
         </div>
+      </section>
+
+      <section className="animate-rise space-y-3 [animation-delay:430ms]">
+        <h2 className="font-display text-lg font-semibold">Daily reminder</h2>
+        <Reminders />
       </section>
 
       <footer className="animate-rise space-y-3 [animation-delay:440ms]">

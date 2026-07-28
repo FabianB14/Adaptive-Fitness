@@ -75,6 +75,7 @@ Create a **Web Service** from this repo with:
 | Build Command | `pip install -r requirements.txt` |
 | Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 | Env var | `ANTHROPIC_API_KEY` = your Anthropic API key |
+| Env var | `AF_VAPID_PUBLIC_KEY` / `AF_VAPID_PRIVATE_KEY` = for push notifications (optional) |
 
 If Root Directory is left blank, the repo still deploys as-is: the root
 `requirements.txt` forwards to `backend/requirements.txt` for the build, and
@@ -84,8 +85,17 @@ Python is pinned to 3.12 via `.python-version`.
 
 Then open the app → Limits → **Upload** and paste the Render URL once
 ("Connect server"). The URL is remembered on the device — no rebuild needed.
-Document extraction is the only feature that requires the server; everything
-else runs on-device.
+Document extraction and push notifications are the only features that require
+the server; everything else runs on-device.
+
+**Push notification setup:** generate VAPID keys with
+`npx web-push generate-vapid-keys`, set them as `AF_VAPID_PUBLIC_KEY` and
+`AF_VAPID_PRIVATE_KEY` on the service (plus `AF_VAPID_SUBJECT`, a
+`mailto:you@example.com` contact), and redeploy. Users then opt in from
+Limits → Daily reminder. Caveats worth knowing: on iPhone the app must be
+installed to the Home Screen (iOS 16.4+), and a free Render instance sleeps
+when idle — reminders only send while the server is awake, so keep it warm
+with a free uptime pinger (or a paid instance) if the daily nudge matters.
 
 ## Documentation
 
@@ -106,4 +116,4 @@ else runs on-device.
 7b. ✅ **Progress & rewards** *(client request)* — Progress tab: starting → trend → goal for weight (goal clamped to a healthy-BMI floor) and tape measurements, weekly steps/cardio tracking with gentle system-set targets, and an emoji sticker shelf where rewards only ever add — no lost stars, no shame states
 8. ✅ **Share cards** — body-free by construction: canvas-rendered cards (streaks, sessions, stickers, movement — never weight, measurements, or calories) shared through the native share sheet with a PNG download fallback. US units (lb, ft/in, inches) landed alongside as a display-only layer — storage stays metric, so switching is instant and lossless.
 8b. ✅ **Walk tracking & two-pose figures** *(client request)* — in-app walk tracker (GPS distance → steps via height-based stride, time-based cadence fallback, honest copy about iOS's no-background-pedometer limits for web apps) feeding the weekly activity totals; every exercise figure now animates between its start and end pose (standing → squatting) with a static-ghost fallback for reduced motion.
-9. Push notifications
+9. ✅ **Push notifications** — one cute nudge a day (🌱🐢⭐🦋), opt-in from Limits → Daily reminder, at an hour the user picks in their timezone. The message pool is tested for banned guilt words; the welcome push doubles as a live end-to-end test. Custom service worker handles push + notification clicks; subscriptions self-heal by re-registering on every app launch.
