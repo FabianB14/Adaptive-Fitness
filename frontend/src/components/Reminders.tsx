@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { detectEnv, getApiBase } from "../lib/env";
+import { detectEnv, getApiBase, setApiBase } from "../lib/env";
 import {
   disablePush,
   enablePush,
@@ -28,7 +28,8 @@ const SAMPLE = {
  */
 export function Reminders() {
   const env = detectEnv();
-  const apiBase = getApiBase();
+  const [apiBase, setApiBaseState] = useState<string | undefined>(() => getApiBase());
+  const [serverInput, setServerInput] = useState("");
   const [prefs, setPrefs] = useState(() => loadPushPrefs());
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -107,13 +108,38 @@ export function Reminders() {
           then come back here.
         </p>
       ) : !apiBase ? (
-        <a
-          href="#/upload"
-          className="mt-3 block rounded-xl bg-periwinkle/10 px-3.5 py-3 text-xs text-periwinkle"
-        >
-          Reminders need your server — connect it once on the Upload screen
-          and come back. →
-        </a>
+        <div className="mt-3 space-y-2">
+          <p className="rounded-xl bg-periwinkle/10 px-3.5 py-3 text-xs text-periwinkle">
+            Reminders need your server. Paste its URL once — this device
+            remembers it.
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={serverInput}
+              onChange={(e) => setServerInput(e.target.value)}
+              inputMode="url"
+              autoCapitalize="none"
+              placeholder="https://your-app.onrender.com"
+              className="font-data w-full flex-1 rounded-xl border border-mist bg-paper px-3 py-2.5 text-sm outline-none focus:border-moss"
+            />
+            <button
+              onClick={() => {
+                const url = serverInput.trim().replace(/\/+$/, "");
+                if (!/^https:\/\/.+/.test(url)) {
+                  setNote("That needs to be a full https:// URL.");
+                  return;
+                }
+                setApiBase(url);
+                setApiBaseState(url);
+                setNote("Connected — pick a time below and turn reminders on.");
+              }}
+              disabled={!serverInput.trim()}
+              className="rounded-xl bg-moss px-4 py-2.5 text-sm font-medium text-paper disabled:opacity-40"
+            >
+              Connect
+            </button>
+          </div>
+        </div>
       ) : (
         <>
           <div className="mt-3 flex items-center gap-2">

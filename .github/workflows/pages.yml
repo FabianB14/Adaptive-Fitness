@@ -39,6 +39,10 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npm run build
+        env:
+          # Baked-in default backend — every device is connected out of the
+          # box. A URL saved in the app (Upload → Connect server) still wins.
+          VITE_API_BASE: https://adaptive-fitness-l5kg.onrender.com
 
       - name: SPA fallback for Pages
         working-directory: frontend
