@@ -10,6 +10,7 @@ import {
   runDiagnostics,
   savePushPrefs,
   sendHello,
+  showLocalTest,
   syncReminders,
   type CheckResult,
   type PushPrefs,
@@ -113,6 +114,22 @@ export function Reminders() {
     setBusy("check");
     setChecks(await runDiagnostics(apiBase ?? null));
     setBusy(null);
+  }
+
+  async function localTest() {
+    setBusy("local");
+    setNote(null);
+    try {
+      await showLocalTest();
+      setNote({
+        tone: "good",
+        text: "Sent from your phone itself. If it didn't appear, notifications are blocked in your phone's settings — not by the server.",
+      });
+    } catch (e) {
+      setNote({ tone: "warn", text: e instanceof Error ? e.message : "Couldn't show it." });
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -301,13 +318,24 @@ export function Reminders() {
         </p>
       )}
 
-      <button
-        onClick={check}
-        disabled={busy !== null}
-        className="w-full py-1 text-center text-xs text-ink/45 underline-offset-2 hover:underline disabled:opacity-40"
-      >
-        {busy === "check" ? "Checking…" : "Notifications not arriving? Run a check"}
-      </button>
+      {isPushSupported() && (
+        <div className="flex gap-2">
+          <button
+            onClick={localTest}
+            disabled={busy !== null}
+            className="flex-1 rounded-xl border border-mist px-3 py-2.5 text-xs text-ink/60 disabled:opacity-40"
+          >
+            {busy === "local" ? "…" : "🧪 Test without the server"}
+          </button>
+          <button
+            onClick={check}
+            disabled={busy !== null}
+            className="flex-1 rounded-xl border border-mist px-3 py-2.5 text-xs text-ink/60 disabled:opacity-40"
+          >
+            {busy === "check" ? "Checking…" : "Run a check"}
+          </button>
+        </div>
+      )}
 
       {checks && (
         <ul className="space-y-1.5 rounded-2xl bg-paper p-3">

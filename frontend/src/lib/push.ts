@@ -310,6 +310,29 @@ export async function resubscribeIfEnabled(apiBase: string | null): Promise<void
   }
 }
 
+/**
+ * Show a notification straight from the service worker — no server, no
+ * push service. This splits a silent failure cleanly in two: if this one
+ * appears but a pushed one doesn't, the problem is delivery (server or
+ * FCM/APNs). If even this doesn't appear, the phone itself is blocking
+ * notifications and no amount of server fixing will help.
+ */
+export async function showLocalTest(): Promise<void> {
+  if (Notification.permission !== "granted") {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      throw new Error("Permission wasn't granted, so nothing can be shown.");
+    }
+  }
+  const reg = await navigator.serviceWorker.ready;
+  await reg.showNotification("🧪 Test notification", {
+    body: "If you can see this, your phone can show notifications. Delivery is the other half.",
+    icon: `${import.meta.env.BASE_URL}icon-192.png`,
+    badge: `${import.meta.env.BASE_URL}icon-192.png`,
+    tag: "af-local-test",
+  });
+}
+
 // -------------------------------------------------------------- diagnostics
 
 export interface CheckResult {
@@ -333,6 +356,7 @@ export async function runDiagnostics(apiBase: string | null): Promise<CheckResul
   const isIOS =
     /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(navigator.userAgent);
 
   add(
     "Installed to Home Screen",
@@ -341,7 +365,7 @@ export async function runDiagnostics(apiBase: string | null): Promise<CheckResul
       ? "Running as an installed app."
       : isIOS
         ? "iPhones only allow notifications for installed apps. Share → Add to Home Screen, open it from there, then re-run this."
-        : "Not required on this browser.",
+        : "Not required on this browser — Android delivers to the browser too.",
   );
 
   add(
@@ -356,9 +380,13 @@ export async function runDiagnostics(apiBase: string | null): Promise<CheckResul
     "Permission",
     Notification.permission === "granted",
     Notification.permission === "granted"
-      ? "Granted."
+      ? isAndroid
+        ? "Granted for this site. If nothing still appears, check Android Settings → Apps → " +
+          (standalone ? "Adaptive Fitness" : "Chrome") +
+          " → Notifications is on, and that Do Not Disturb / Battery saver isn't holding them back."
+        : "Granted."
       : Notification.permission === "denied"
-        ? "Blocked. Re-allow notifications for this site in your browser or iOS Settings → Notifications."
+        ? "Blocked. Re-allow notifications for this site in your browser settings (Android: Chrome → ⋮ → Settings → Site settings → Notifications)."
         : "Not asked yet — turn a reminder on.",
   );
 

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="AF_")
 
     app_name: str = "Adaptive Fitness API"
-    version: str = "0.13.0"
+    version: str = "0.13.1"
     # Model used for medical-document extraction (override with AF_EXTRACT_MODEL).
     extract_model: str = "claude-opus-5"
     # Comma-separated list of allowed browser origins.
