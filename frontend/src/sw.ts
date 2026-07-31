@@ -26,6 +26,8 @@ registerRoute(new NavigationRoute(createHandlerBoundToURL(`${BASE}index.html`)))
 interface PushPayload {
   title?: string;
   body?: string;
+  /** Per-kind tag: a morning nudge never replaces an evening one. */
+  tag?: string;
 }
 
 self.addEventListener("push", (event) => {
@@ -40,7 +42,9 @@ self.addEventListener("push", (event) => {
       body: payload.body ?? "Your plan is ready whenever you are.",
       icon: `${BASE}icon-192.png`,
       badge: `${BASE}icon-192.png`,
-      tag: "af-daily", // one nudge replaces another — never a pile-up
+      // Same kind replaces itself (never a pile-up of identical nudges);
+      // different kinds stand alone.
+      tag: payload.tag ?? "af-daily",
       data: { url: BASE },
     }),
   );

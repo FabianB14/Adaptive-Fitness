@@ -265,7 +265,7 @@ export function ConstraintsScreen() {
       </section>
 
       <section className="animate-rise space-y-3 [animation-delay:430ms]">
-        <h2 className="font-display text-lg font-semibold">Daily reminder</h2>
+        <h2 className="font-display text-lg font-semibold">Reminders</h2>
         <Reminders />
       </section>
 

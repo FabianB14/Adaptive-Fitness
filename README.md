@@ -88,14 +88,27 @@ Then open the app → Limits → **Upload** and paste the Render URL once
 Document extraction and push notifications are the only features that require
 the server; everything else runs on-device.
 
-**Push notification setup:** generate VAPID keys with
-`npx web-push generate-vapid-keys`, set them as `AF_VAPID_PUBLIC_KEY` and
-`AF_VAPID_PRIVATE_KEY` on the service (plus `AF_VAPID_SUBJECT`, a
-`mailto:you@example.com` contact), and redeploy. Users then opt in from
-Limits → Daily reminder. Caveats worth knowing: on iPhone the app must be
-installed to the Home Screen (iOS 16.4+), and a free Render instance sleeps
-when idle — reminders only send while the server is awake, so keep it warm
-with a free uptime pinger (or a paid instance) if the daily nudge matters.
+**Push notification setup:** run `npx web-push generate-vapid-keys` and set
+three environment variables on the service, then redeploy:
+
+| Variable | Value |
+|---|---|
+| `AF_VAPID_PUBLIC_KEY` | the **Public Key** line (single-line base64url, ~87 chars) |
+| `AF_VAPID_PRIVATE_KEY` | the **Private Key** line (single-line base64url, ~43 chars) |
+| `AF_VAPID_SUBJECT` | `mailto:you@example.com` — a real address |
+
+Both keys must be the single-line base64url strings. A multi-line PEM block
+gets mangled by environment variables and silently breaks every send, and
+Apple's push service rejects a `sub` claim pointing at an unreachable domain
+— which is why the default placeholder must be replaced. `GET /push/config`
+self-checks all three and names anything wrong; the app surfaces that text
+verbatim under Limits → Reminders → *Run a check*.
+
+Users then opt in from Limits → Reminders and switch on whichever nudges
+they want. Two caveats worth knowing: on iPhone the app must be installed to
+the Home Screen (iOS 16.4+), and a free Render instance sleeps when idle —
+reminders only send while the server is awake, so keep it warm with a free
+uptime pinger (or a paid instance) if the daily nudge matters.
 
 ## Documentation
 
@@ -116,4 +129,4 @@ with a free uptime pinger (or a paid instance) if the daily nudge matters.
 7b. ✅ **Progress & rewards** *(client request)* — Progress tab: starting → trend → goal for weight (goal clamped to a healthy-BMI floor) and tape measurements, weekly steps/cardio tracking with gentle system-set targets, and an emoji sticker shelf where rewards only ever add — no lost stars, no shame states
 8. ✅ **Share cards** — body-free by construction: canvas-rendered cards (streaks, sessions, stickers, movement — never weight, measurements, or calories) shared through the native share sheet with a PNG download fallback. US units (lb, ft/in, inches) landed alongside as a display-only layer — storage stays metric, so switching is instant and lossless.
 8b. ✅ **Walk tracking & two-pose figures** *(client request)* — in-app walk tracker (GPS distance → steps via height-based stride, time-based cadence fallback, honest copy about iOS's no-background-pedometer limits for web apps) feeding the weekly activity totals; every exercise figure now animates between its start and end pose (standing → squatting) with a static-ghost fallback for reduced motion.
-9. ✅ **Push notifications** — one cute nudge a day (🌱🐢⭐🦋), opt-in from Limits → Daily reminder, at an hour the user picks in their timezone. The message pool is tested for banned guilt words; the welcome push doubles as a live end-to-end test. Custom service worker handles push + notification clicks; subscriptions self-heal by re-registering on every app launch.
+9. ✅ **Push notifications** — five kinds of cute nudge (🌱 today's plan, 👟 movement snack, 🍓 food check-in, 🌙 evening check-in, ⭐ weekly celebration), each switched on independently with its own hour and its own rotating message pool. Every pool is tested for banned guilt words. A per-kind "Try it" button and a *Run a check* self-diagnostic (install state → permission → service worker → server reachability → VAPID health → subscription validity) mean a silent failure always names its own cause.
