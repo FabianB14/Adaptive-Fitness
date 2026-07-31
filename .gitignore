@@ -20,3 +20,6 @@ venv/
 .idea/
 .vscode/
 *.swp
+
+# Push subscription store (runtime data, never source)
+af_push_subscriptions.json
