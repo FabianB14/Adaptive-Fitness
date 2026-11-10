@@ -3,7 +3,29 @@
  * queue when the backend lands (every entry already carries a client id
  * and timestamp so replays are idempotent).
  */
+import { type DayPlan } from "./planner";
+
 export type TierChoice = "full" | "light" | "minimum" | "rest";
+
+export interface WorkoutSnapshot {
+  location?: "home" | "gym";
+  exercises: { slug: string; name: string; dose: string }[];
+}
+
+/** Capture the plan when logging so future plan/library changes leave history intact. */
+export function snapshotWorkout(
+  plan: DayPlan,
+  tier: Exclude<TierChoice, "rest">,
+): WorkoutSnapshot {
+  return {
+    location: plan.location,
+    exercises: plan[tier].map(({ exercise, dose }) => ({
+      slug: exercise.slug,
+      name: exercise.name,
+      dose,
+    })),
+  };
+}
 
 export interface LoggedExercise {
   slug: string;
@@ -21,6 +43,8 @@ export interface SessionLog {
   rpe?: number;
   /** Per-exercise detail when the session was logged set by set. */
   exercises?: LoggedExercise[];
+  /** The original planned movements; quick logs do not imply tracked sets. */
+  workout?: WorkoutSnapshot;
   loggedAt: string;
 }
 
@@ -58,6 +82,7 @@ export function addLog(
   tier: TierChoice,
   rpe?: number,
   exercises?: LoggedExercise[],
+  workout?: WorkoutSnapshot,
 ): SessionLog[] {
   const logs = loadLogs().filter((l) => l.date !== date); // one log per day
   logs.push({
@@ -66,6 +91,7 @@ export function addLog(
     tier,
     rpe,
     exercises,
+    ...(workout ? { workout } : {}),
     loggedAt: new Date().toISOString(),
   });
   logs.sort((a, b) => a.date.localeCompare(b.date));

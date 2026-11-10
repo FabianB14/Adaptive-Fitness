@@ -64,7 +64,7 @@
 /* Dark palette — same identity, lower light. Applied automatically from the
    system preference, or forced with data-theme (set from Limits → Appearance). */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme]) {
     --color-paper: #141b16;
     --color-ink: #e7ece6;
     --color-moss: #7fae8f;
@@ -82,6 +82,18 @@
   --color-ochre: #c99f5a;
   --color-mist: #2c362e;
   --color-card: #1c2620;
+}
+
+/* Blush surfaces, rose accents, and plum text throughout the existing UI. */
+:root[data-theme="pink"] {
+  --color-paper: #fff2f6;
+  --color-ink: #382532;
+  --color-moss: #ad3568;
+  --color-periwinkle: #7d54a4;
+  --color-ochre: #8b6125;
+  --color-mist: #f0d5e1;
+  --color-card: #fffbfd;
+  color-scheme: light;
 }
 
 html {

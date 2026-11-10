@@ -1,11 +1,15 @@
-/** Appearance preference: auto (follow the system), light, or dark. */
-export type ThemePref = "auto" | "light" | "dark";
+/** Appearance preference: auto (follow the system), light, dark, or pink. */
+export type ThemePref = "auto" | "light" | "dark" | "pink";
 
 const KEY = "af.theme.v1";
 
 export function getThemePref(): ThemePref {
-  const v = localStorage.getItem(KEY);
-  return v === "light" || v === "dark" ? v : "auto";
+  try {
+    const v = localStorage.getItem(KEY);
+    return v === "light" || v === "dark" || v === "pink" ? v : "auto";
+  } catch {
+    return "auto";
+  }
 }
 
 export function setThemePref(pref: ThemePref): void {
@@ -15,11 +19,10 @@ export function setThemePref(pref: ThemePref): void {
   } catch {
     // Storage unavailable — the in-session attribute still applies below.
   }
-  applyTheme();
+  applyTheme(pref);
 }
 
-export function applyTheme(): void {
-  const pref = getThemePref();
+export function applyTheme(pref: ThemePref = getThemePref()): void {
   const root = document.documentElement;
   if (pref === "auto") delete root.dataset.theme;
   else root.dataset.theme = pref;

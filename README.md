@@ -180,3 +180,16 @@ minute-by-minute reminder loop.
 
 Preferences, custom meals, date-specific swaps, and checklists are stored on
 this device. No new backend services, API keys, or cloud subscriptions are needed.
+
+## Workout history and pink appearance
+
+Open **Workout calendar** from Today, Progress, or Your week. Browse months and
+tap a date to see the logged tier, rest day, completed/planned sets, weights in
+your chosen units, and recorded effort. New logs also preserve the exercise
+names, planned doses, and gym/home location at the time of logging. Quick logs
+show their original planned movements without claiming any tracked sets; older
+logs display only the details they actually contain. History stays on this device.
+
+Choose **Limits → Appearance → Pink** for blush surfaces, rose accents, and plum
+text across the app. The choice persists on this device and stays pink even when
+the phone uses dark mode. Auto, Light, and Dark remain available.

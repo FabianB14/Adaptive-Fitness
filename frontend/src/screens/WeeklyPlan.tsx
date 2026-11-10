@@ -95,6 +95,9 @@ export function WeeklyPlan() {
           A plan built around your goals, time, equipment, and body limits.
           Light days and rest belong here too.
         </p>
+        <a href="#/calendar" className="mt-3 inline-block text-sm font-medium text-moss underline">
+          View workout history in the calendar →
+        </a>
       </header>
       {!profile ? (
         <a href="#/setup" className="rounded-2xl bg-moss p-4 text-paper">

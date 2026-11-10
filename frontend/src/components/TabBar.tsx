@@ -22,6 +22,7 @@ const TABS: Tab[] = [
       !r.startsWith("#/constraints") &&
       !r.startsWith("#/food") &&
       !r.startsWith("#/meals") &&
+      !r.startsWith("#/calendar") &&
       !r.startsWith("#/progress"),
     icon: (a) => (
       <svg viewBox="0 0 24 24" className="h-6 w-6" {...stroke(a)}>
@@ -44,7 +45,7 @@ const TABS: Tab[] = [
   {
     href: "#/progress",
     label: "Progress",
-    isActive: (r) => r.startsWith("#/progress"),
+    isActive: (r) => r.startsWith("#/progress") || r.startsWith("#/calendar"),
     icon: (a) => (
       <svg viewBox="0 0 24 24" className="h-6 w-6" {...stroke(a)}>
         <path d="M4 19.5V13M9.5 19.5V8M15 19.5v-8.5M20.5 19.5v-15" />

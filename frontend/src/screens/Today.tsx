@@ -4,7 +4,7 @@ import { ReadinessMap } from "../components/ReadinessMap";
 import { loadConstraints, REGION_LABELS } from "../lib/constraints";
 import { daySignals, effectiveConstraints } from "../lib/engine";
 import { API_BASE } from "../lib/env";
-import { addLog, addPainEvent, loadLogs, loadPainEvents, removeLog, type PainEvent, type SessionLog, type TierChoice } from "../lib/logs";
+import { addLog, addPainEvent, loadLogs, loadPainEvents, removeLog, snapshotWorkout, type PainEvent, type SessionLog, type TierChoice } from "../lib/logs";
 import { loadProfile } from "../lib/nutrition";
 import { type PlannedItem } from "../lib/planner";
 import { planForDate, generateWeek } from "../lib/weekly";
@@ -122,6 +122,10 @@ export function Today() {
         <span className="mt-1 block text-sm text-ink/60">{scheduled ? scheduled.guidance : "Choose your days, time, and style. We'll work around your limits."}</span>
       </a>
 
+      <a href="#/calendar" className="-mt-2 self-end py-2 text-sm font-medium text-moss underline-offset-2 hover:underline">
+        Workout calendar →
+      </a>
+
       {/* Stat tiles */}
       <section className="animate-rise grid grid-cols-3 gap-2.5 [animation-delay:80ms]" aria-label="Your week">
         <StatTile value={String(signals.streakWeeks)} unit={signals.streakWeeks === 1 ? "week" : "weeks"} label="streak" />
@@ -207,7 +211,7 @@ export function Today() {
                 items={plan[t.key]}
                 open={openTier === t.key}
                 onToggle={() => setOpenTier(openTier === t.key ? null : t.key)}
-                onLog={(rpe) => setLogs(addLog(date, t.key, rpe))}
+                onLog={(rpe) => setLogs(addLog(date, t.key, rpe, undefined, snapshotWorkout(plan, t.key)))}
                 delay={460 + i * 100}
               />
             ))}

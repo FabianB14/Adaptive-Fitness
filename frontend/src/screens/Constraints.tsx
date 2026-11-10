@@ -250,6 +250,7 @@ export function ConstraintsScreen() {
               { value: "auto" as ThemePref, label: "Auto" },
               { value: "light" as ThemePref, label: "Light" },
               { value: "dark" as ThemePref, label: "Dark" },
+              { value: "pink" as ThemePref, label: "Pink" },
             ]}
             value={theme}
             onChange={(v) => {
@@ -259,7 +260,7 @@ export function ConstraintsScreen() {
             tone="moss"
           />
           <p className="mt-2 pl-1 text-xs text-ink/50">
-            Auto follows your phone's setting.
+            Auto follows your phone's setting. Pink uses soft blush, rose, and plum.
           </p>
         </div>
       </section>

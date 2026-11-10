@@ -102,6 +102,11 @@ export function ProgressScreen() {
         </h1>
       </header>
 
+      <a href="#/calendar" className="rounded-3xl border border-moss/30 bg-moss/10 p-5">
+        <span className="font-display block text-lg font-semibold text-moss">Workout calendar →</span>
+        <span className="mt-1 block text-sm text-ink/70">See what you logged each day, including exercises, sets, and rest days.</span>
+      </a>
+
       <StickerShelf stickers={stickers} />
 
       <WeightCard

@@ -22,6 +22,11 @@ const WeeklyPlan = lazy(() =>
     default: module.WeeklyPlan,
   })),
 );
+const WorkoutCalendar = lazy(() =>
+  import("./screens/WorkoutCalendar").then((module) => ({
+    default: module.WorkoutCalendar,
+  })),
+);
 
 const INSTALL_GATE_DISMISSED_KEY = "af.installGate.dismissed";
 
@@ -78,6 +83,8 @@ export default function App() {
     <MealPlan />
   ) : route.startsWith("#/food") ? (
     <Food />
+  ) : route.startsWith("#/calendar") ? (
+    <WorkoutCalendar />
   ) : route.startsWith("#/progress") ? (
     <ProgressScreen />
   ) : route.startsWith("#/upload") ? (

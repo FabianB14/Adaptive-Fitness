@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { loadConstraints } from "../lib/constraints";
 import { daySignals, effectiveConstraints } from "../lib/engine";
 import { ExerciseFigure } from "../components/ExerciseFigure";
-import { addLog, loadLogs, loadPainEvents } from "../lib/logs";
+import { addLog, loadLogs, loadPainEvents, snapshotWorkout } from "../lib/logs";
 import { loadProfile } from "../lib/nutrition";
 import { planForDate } from "../lib/weekly";
 import {
@@ -157,6 +157,7 @@ export function Session({ tier }: { tier: TierKey }) {
         loadKg,
         rpe,
       })),
+      snapshotWorkout(plan, tier),
     );
     let states = applySession(loadStates(), results, date);
     states = resetSwapped(states, results.map((r) => r.slug));
@@ -191,6 +192,7 @@ export function Session({ tier }: { tier: TierKey }) {
         >
           Back to Today
         </a>
+        <a href="#/calendar" className="py-2 text-sm text-moss underline">View in workout calendar</a>
       </main>
     );
   }
