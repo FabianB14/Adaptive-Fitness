@@ -154,3 +154,29 @@ Keep your existing matching VAPID key pair. Once `/push/config` reports
 `healthy: true`, turn reminders on and use **Try it** on the device. The service
 must stay awake for scheduled sends; a sleeping free instance cannot run the
 minute-by-minute reminder loop.
+
+## Flexible locations, meals, and supplements
+
+- In **Your week → Adjust plan**, choose **Use 3 gym + 2 home days**, or
+  enable separate home/gym equipment lists and assign your own weekdays.
+  Change the location inside a dated workout to override only that date.
+  Today and Session use the same location-specific equipment filters. Existing
+  profiles keep using their original equipment list until locations are enabled.
+- In **Food → Plan meals for your week**, combine an eating pattern (balanced,
+  MIND-inspired, Mediterranean-inspired, or vegetarian), a food goal
+  (maintenance, gradual gain, or gradual loss), and the lower-cost filter.
+  Check foods to exclude, swap suggestions, or save your own daily meal for a
+  specific slot. Incompatible choices leave an explicit gap; they never re-add
+  excluded ingredients. Prices and nutrition are estimates, and these menus
+  are not medical diets or guarantees of allergen avoidance.
+- Checking **Eaten** adds the meal to the food diary once. Changing preferences
+  keeps already logged food intact. The diary also works without a profile.
+  Calorie targets follow the selected food goal; profiles without a weight
+  receive standard serving ideas without a personal calorie target.
+- **Food → Optional supplements** provides information on creatine,
+  pre-workout/caffeine, protein powder, and electrolytes, with NIH/FDA links.
+  The opt-in checklist records what the user marks as taken; it does not
+  prescribe doses or send reminders.
+
+Preferences, custom meals, date-specific swaps, and checklists are stored on
+this device. No new backend services, API keys, or cloud subscriptions are needed.

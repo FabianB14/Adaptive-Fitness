@@ -1,7 +1,10 @@
+import { Supplements } from "../components/Supplements";
+import { loadMealPreferences } from "../lib/mealPlans";
 import { useMemo, useState } from "react";
 import {
   addEntry,
   calorieTarget,
+  goalForProfile,
   entriesForDate,
   loadEntries,
   loadProfile,
@@ -44,19 +47,41 @@ export function Food() {
   const date = todayISO();
   const today = useMemo(() => entriesForDate(entries, date), [entries, date]);
   const eaten = totalKcal(today);
-  const target = profile ? calorieTarget(profile, new Date().getFullYear()) : null;
+  const mealPrefs = loadMealPreferences(goalForProfile(profile));
+  const target = profile
+    ? calorieTarget(
+        { ...profile, nutritionGoal: mealPrefs.goal },
+        new Date().getFullYear(),
+      )
+    : null;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-5 pb-28 pt-8">
       <header className="animate-rise">
         <p className="text-xs font-medium uppercase tracking-wide text-ink/40">
-          {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          {new Date().toLocaleDateString(undefined, {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+          })}
         </p>
         <h1 className="font-display mt-0.5 text-[1.75rem] font-semibold leading-tight">
           Food
         </h1>
       </header>
 
+      <a
+        href="#/meals"
+        className="rounded-3xl border border-moss/30 bg-moss/10 p-5"
+      >
+        <span className="font-display block text-lg font-semibold">
+          Plan meals for your week →
+        </span>
+        <span className="mt-1 block text-sm text-ink/60">
+          Budget-friendly ideas, MIND-style meals, foods you enjoy, and your
+          daily favorites.
+        </span>
+      </a>
       {!profile ? (
         <section className="animate-rise rounded-3xl border border-mist bg-card p-6 text-center shadow-sm [animation-delay:80ms]">
           <p className="font-display text-lg font-semibold">
@@ -78,8 +103,21 @@ export function Food() {
             <CalorieRing eaten={eaten} target={target?.kcal ?? null} />
             {target ? (
               <p className="mt-3 text-center text-sm text-ink/60">
-                <span className="font-data">{target.kcal.toLocaleString()}</span> target −{" "}
-                <span className="font-data">{eaten.toLocaleString()}</span> eaten
+                <span className="block text-xs text-ink/50">
+                  Estimated{" "}
+                  {target.goal === "gain"
+                    ? "muscle-gain"
+                    : target.goal === "lose"
+                      ? "weight-loss"
+                      : "maintenance"}{" "}
+                  target
+                </span>
+                <span className="font-data">
+                  {target.kcal.toLocaleString()}
+                </span>{" "}
+                target −{" "}
+                <span className="font-data">{eaten.toLocaleString()}</span>{" "}
+                eaten
                 {target.floorApplied && (
                   <span className="mt-1 block text-xs text-ochre">
                     Held at the safety floor — we don't go lower than this.
@@ -99,66 +137,77 @@ export function Food() {
               Edit profile & goals
             </a>
           </section>
-
-          <section className="space-y-2.5" aria-label="Meals">
-            {MEALS.map((m, i) => {
-              const mealEntries = today.filter((e) => e.meal === m.key);
-              return (
-                <div
-                  key={m.key}
-                  className="animate-rise rounded-3xl border border-mist bg-card p-4 shadow-sm"
-                  style={{ animationDelay: `${160 + i * 80}ms` }}
-                >
-                  <div className="flex items-baseline justify-between">
-                    <h2 className="font-display text-base font-semibold">{m.label}</h2>
-                    <span className="font-data text-sm text-ink/50">
-                      {totalKcal(mealEntries).toLocaleString()} kcal
-                    </span>
-                  </div>
-                  <ul className="mt-2 space-y-1.5">
-                    {mealEntries.map((e) => (
-                      <li key={e.id} className="flex items-center justify-between gap-2 text-sm">
-                        <span className="text-ink/80">{e.label || "Entry"}</span>
-                        <span className="flex items-center gap-2">
-                          <span className="font-data text-ink/60">{e.kcal}</span>
-                          <button
-                            aria-label={`Remove ${e.label || "entry"}`}
-                            onClick={() => setEntries(removeEntry(e.id))}
-                            className="px-1 text-ink/35 hover:text-ink/70"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  {adding === m.key ? (
-                    <AddEntry
-                      onAdd={(label, kcal) => {
-                        setEntries(addEntry(date, m.key, label, kcal));
-                        setAdding(null);
-                      }}
-                      onCancel={() => setAdding(null)}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setAdding(m.key)}
-                      className="mt-2 text-sm text-moss underline-offset-2 hover:underline"
-                    >
-                      + Add food
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </section>
         </>
       )}
+      <section className="space-y-2.5" aria-label="Meals">
+        {MEALS.map((m, i) => {
+          const mealEntries = today.filter((e) => e.meal === m.key);
+          return (
+            <div
+              key={m.key}
+              className="animate-rise rounded-3xl border border-mist bg-card p-4 shadow-sm"
+              style={{ animationDelay: `${160 + i * 80}ms` }}
+            >
+              <div className="flex items-baseline justify-between">
+                <h2 className="font-display text-base font-semibold">
+                  {m.label}
+                </h2>
+                <span className="font-data text-sm text-ink/50">
+                  {totalKcal(mealEntries).toLocaleString()} kcal
+                </span>
+              </div>
+              <ul className="mt-2 space-y-1.5">
+                {mealEntries.map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="text-ink/80">{e.label || "Entry"}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-data text-ink/60">{e.kcal}</span>
+                      <button
+                        aria-label={`Remove ${e.label || "entry"}`}
+                        onClick={() => setEntries(removeEntry(e.id))}
+                        className="px-1 text-ink/35 hover:text-ink/70"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {adding === m.key ? (
+                <AddEntry
+                  onAdd={(label, kcal) => {
+                    setEntries(addEntry(date, m.key, label, kcal));
+                    setAdding(null);
+                  }}
+                  onCancel={() => setAdding(null)}
+                />
+              ) : (
+                <button
+                  onClick={() => setAdding(m.key)}
+                  className="mt-2 text-sm text-moss underline-offset-2 hover:underline"
+                >
+                  + Add food
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </section>
+      <Supplements />
     </main>
   );
 }
 
-function CalorieRing({ eaten, target }: { eaten: number; target: number | null }) {
+function CalorieRing({
+  eaten,
+  target,
+}: {
+  eaten: number;
+  target: number | null;
+}) {
   const r = 62;
   const circ = 2 * Math.PI * r;
   const frac = target ? Math.min(eaten / target, 1) : 0;
@@ -167,7 +216,13 @@ function CalorieRing({ eaten, target }: { eaten: number; target: number | null }
   return (
     <div className="relative mx-auto h-44 w-44">
       <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90">
-        <circle cx="80" cy="80" r={r} className="fill-none stroke-mist" strokeWidth="11" />
+        <circle
+          cx="80"
+          cy="80"
+          r={r}
+          className="fill-none stroke-mist"
+          strokeWidth="11"
+        />
         {target && (
           <circle
             cx="80"
@@ -184,17 +239,23 @@ function CalorieRing({ eaten, target }: { eaten: number; target: number | null }
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {remaining === null ? (
           <>
-            <span className="font-data text-3xl font-medium">{eaten.toLocaleString()}</span>
+            <span className="font-data text-3xl font-medium">
+              {eaten.toLocaleString()}
+            </span>
             <span className="text-xs text-ink/50">kcal today</span>
           </>
         ) : remaining >= 0 ? (
           <>
-            <span className="font-data text-3xl font-medium">{remaining.toLocaleString()}</span>
+            <span className="font-data text-3xl font-medium">
+              {remaining.toLocaleString()}
+            </span>
             <span className="text-xs text-ink/50">kcal left</span>
           </>
         ) : (
           <>
-            <span className="font-data text-3xl font-medium">{Math.abs(remaining).toLocaleString()}</span>
+            <span className="font-data text-3xl font-medium">
+              {Math.abs(remaining).toLocaleString()}
+            </span>
             <span className="max-w-24 text-center text-xs leading-tight text-ink/50">
               over — tomorrow's a fresh page
             </span>

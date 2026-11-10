@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calorieTarget,
+  goalForProfile,
   KCAL_FLOOR,
   mifflinStJeor,
   totalKcal,
@@ -9,6 +10,7 @@ import {
 
 const profile = (over: Partial<Profile>): Profile => ({
   version: 1,
+  nutritionGoal: "lose",
   sex: "male",
   birthYear: 1996,
   heightCm: 180,
@@ -25,6 +27,36 @@ describe("Mifflin-St Jeor", () => {
 });
 
 describe("calorie target", () => {
+  it("matches maintenance and a modest surplus to the selected goal", () => {
+    const maintain = calorieTarget(
+      profile({ nutritionGoal: "maintain" }),
+      2026,
+    )!;
+    const gain = calorieTarget(profile({ nutritionGoal: "gain" }), 2026)!;
+    const lose = calorieTarget(profile({ nutritionGoal: "lose" }), 2026)!;
+    expect(maintain.kcal).toBe(maintain.tdee);
+    expect(gain.kcal).toBeGreaterThan(gain.tdee);
+    expect(gain.kcal - gain.tdee).toBeLessThanOrEqual(250);
+    expect(lose.kcal).toBeLessThan(lose.tdee);
+  });
+  it("infers the food goal without putting every profile into a deficit", () => {
+    expect(
+      goalForProfile(profile({ nutritionGoal: undefined, goals: [] })),
+    ).toBe("maintain");
+    expect(
+      goalForProfile(profile({ nutritionGoal: undefined, goals: ["muscle"] })),
+    ).toBe("gain");
+    expect(
+      goalForProfile(
+        profile({ nutritionGoal: undefined, goals: ["lose_weight"] }),
+      ),
+    ).toBe("lose");
+    expect(
+      goalForProfile(
+        profile({ nutritionGoal: "maintain", goals: ["lose_weight"] }),
+      ),
+    ).toBe("maintain");
+  });
   it("applies activity then the steady-pace deficit by default", () => {
     const t = calorieTarget(profile({}), 2026)!;
     // BMR 1780 × 1.55 = 2759; steady deficit min(400, 12%·2759=331.08)
@@ -52,7 +84,14 @@ describe("calorie target", () => {
   it("NEVER goes below the hard floor, at any pace", () => {
     for (const pace of ["gentle", "steady", "aggressive"] as const) {
       const t = calorieTarget(
-        profile({ sex: "female", weightKg: 45, heightCm: 150, birthYear: 1956, activity: "sedentary", pace }),
+        profile({
+          sex: "female",
+          weightKg: 45,
+          heightCm: 150,
+          birthYear: 1956,
+          activity: "sedentary",
+          pace,
+        }),
         2026,
       )!;
       expect(t.kcal).toBe(KCAL_FLOOR.female);
@@ -61,7 +100,10 @@ describe("calorie target", () => {
   });
 
   it("floor holds even for absurd inputs", () => {
-    const t = calorieTarget(profile({ sex: "male", weightKg: 40, heightCm: 140, birthYear: 1940 }), 2026)!;
+    const t = calorieTarget(
+      profile({ sex: "male", weightKg: 40, heightCm: 140, birthYear: 1940 }),
+      2026,
+    )!;
     expect(t.kcal).toBeGreaterThanOrEqual(KCAL_FLOOR.male);
   });
 

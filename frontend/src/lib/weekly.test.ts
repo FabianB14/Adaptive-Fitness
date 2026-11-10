@@ -146,3 +146,64 @@ describe("weekly plans", () => {
       }
   });
 });
+
+describe("gym and home schedules", () => {
+  const training = trainingPreferences({
+    days: 5,
+    weekdays: [0, 1, 2, 3, 4],
+    style: "strength",
+    experience: "regular",
+    locations: { 0: "gym", 1: "home", 2: "gym", 3: "home", 4: "gym" },
+    locationEquipment: { home: ["bodyweight"], gym: ["machine", "dumbbell"] },
+  });
+  const p = { ...profile, training };
+  it("uses the correct equipment at each of three gym and two home sessions", () => {
+    const c = defaultConstraints();
+    c.equipment = ["bodyweight"];
+    c.regions.knee = "suppressed";
+    const week = generateWeek(c, "2026-11-10", p);
+    expect(week.days.filter((d) => d.location === "gym")).toHaveLength(3);
+    expect(week.days.filter((d) => d.location === "home")).toHaveLength(2);
+    for (const day of week.days)
+      for (const tier of ["full", "light", "minimum"] as const)
+        for (const item of day.plan[tier]) {
+          const equipment = training.locationEquipment![day.location!];
+          expect(
+            item.exercise.equipment === "none" ||
+              equipment.includes(item.exercise.equipment),
+          ).toBe(true);
+          expect(item.exercise.joints_loaded).not.toContain("knee");
+        }
+  });
+  it("allows a one-date switch while preserving the usual weekday location", () => {
+    const switched = {
+      ...p,
+      training: trainingPreferences({
+        ...training,
+        locationOverrides: { "2026-11-11": "home" },
+      }),
+    };
+    expect(
+      generateWeek(defaultConstraints(), "2026-11-10", switched).days[2]
+        .location,
+    ).toBe("home");
+    expect(
+      generateWeek(defaultConstraints(), "2026-11-17", switched).days[2]
+        .location,
+    ).toBe("gym");
+    const day = generateWeek(defaultConstraints(), "2026-11-10", switched)
+      .days[2];
+    expect(planForDate(defaultConstraints(), day.date, switched)).toEqual(
+      day.plan,
+    );
+  });
+  it("keeps older profiles on their existing equipment list until locations are enabled", () => {
+    const c = defaultConstraints();
+    c.equipment = ["band"];
+    const week = generateWeek(c, "2026-11-10", profile);
+    expect(week.days.every((d) => d.location === undefined)).toBe(true);
+    for (const day of week.days)
+      for (const item of day.plan.full)
+        expect(["none", "band"]).toContain(item.exercise.equipment);
+  });
+});

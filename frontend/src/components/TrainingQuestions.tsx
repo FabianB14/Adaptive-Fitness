@@ -1,6 +1,8 @@
 import {
   PLAN_STYLES,
   WEEKDAYS,
+  LOCATION_LABELS,
+  type TrainingLocation,
   trainingPreferences,
   type TrainingPreferences,
 } from "../lib/weekly";
@@ -122,37 +124,157 @@ export function TrainingQuestions({
           <option value="regular">I already train regularly</option>
         </select>
       </label>
-      <fieldset>
-        <legend className="mb-2 text-sm">What equipment can you use?</legend>
-        <div className="flex flex-wrap gap-2">
-          {EQUIPMENT.map(([id, label]) => (
-            <button
-              type="button"
-              key={id}
-              aria-pressed={equipment.includes(id)}
-              onClick={() =>
-                onEquipment(
-                  equipment.includes(id)
-                    ? equipment.filter((e) => e !== id)
-                    : [...equipment, id],
-                )
-              }
-              className={`rounded-xl border px-3 py-2 text-sm ${equipment.includes(id) ? "border-moss bg-moss/10" : "border-mist bg-card"}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-ink/55">
-          Exercises without equipment are always available. Your saved body
-          limits still apply.{" "}
-          {showLimitsLink && (
-            <a href="#/constraints" className="text-moss underline">
-              Review limits
-            </a>
-          )}
-        </p>
-      </fieldset>
+      <section
+        className="space-y-3 rounded-2xl border border-mist p-4"
+        aria-label="Workout locations"
+      >
+        <h3 className="font-medium">Gym, home, or a mix</h3>
+        <button
+          type="button"
+          className="w-full rounded-xl bg-moss/10 px-3 py-3 text-sm text-moss"
+          onClick={() =>
+            onChange(
+              trainingPreferences({
+                ...value,
+                days: 5,
+                weekdays: [0, 1, 2, 3, 4],
+                locations: {
+                  0: "gym",
+                  1: "home",
+                  2: "gym",
+                  3: "home",
+                  4: "gym",
+                },
+                locationOverrides: {},
+                locationEquipment: value.locationEquipment ?? {
+                  home: ["bodyweight"],
+                  gym: ["bodyweight", "band", "dumbbell", "machine", "barbell"],
+                },
+              }),
+            )
+          }
+        >
+          Use 3 gym + 2 home days
+        </button>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={!!value.locationEquipment}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                locationEquipment: e.target.checked
+                  ? { home: ["bodyweight"], gym: [...equipment] }
+                  : undefined,
+              })
+            }
+          />
+          <span>Choose equipment separately for home and gym</span>
+        </label>
+        {value.locationEquipment && (
+          <>
+            <p className="text-xs text-ink/55">
+              Choose your usual location for each workout. You can change a
+              single date later.
+            </p>
+            {value.weekdays.map((day) => (
+              <label
+                key={day}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
+                {WEEKDAYS[day]} location
+                <select
+                  aria-label={`${WEEKDAYS[day]} usual location`}
+                  className="rounded-lg border border-mist bg-paper p-2"
+                  value={value.locations?.[day] ?? "home"}
+                  onChange={(e) =>
+                    onChange({
+                      ...value,
+                      locations: {
+                        ...value.locations,
+                        [day]: e.target.value as TrainingLocation,
+                      },
+                    })
+                  }
+                >
+                  <option value="home">Home</option>
+                  <option value="gym">Gym</option>
+                </select>
+              </label>
+            ))}
+            {(["home", "gym"] as const).map((location) => (
+              <fieldset key={location}>
+                <legend className="mb-2 text-sm font-medium">
+                  {LOCATION_LABELS[location]} equipment
+                </legend>
+                <div className="flex flex-wrap gap-2">
+                  {EQUIPMENT.map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-label={`${LOCATION_LABELS[location]}: ${label}`}
+                      aria-pressed={value.locationEquipment![location].includes(
+                        id,
+                      )}
+                      className={`rounded-xl border px-3 py-2 text-sm ${value.locationEquipment![location].includes(id) ? "border-moss bg-moss/10" : "border-mist"}`}
+                      onClick={() =>
+                        onChange({
+                          ...value,
+                          locationEquipment: {
+                            ...value.locationEquipment!,
+                            [location]: value.locationEquipment![
+                              location
+                            ].includes(id)
+                              ? value.locationEquipment![location].filter(
+                                  (e) => e !== id,
+                                )
+                              : [...value.locationEquipment![location], id],
+                          },
+                        })
+                      }
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </>
+        )}
+      </section>
+      {!value.locationEquipment && (
+        <fieldset>
+          <legend className="mb-2 text-sm">What equipment can you use?</legend>
+          <div className="flex flex-wrap gap-2">
+            {EQUIPMENT.map(([id, label]) => (
+              <button
+                type="button"
+                key={id}
+                aria-pressed={equipment.includes(id)}
+                onClick={() =>
+                  onEquipment(
+                    equipment.includes(id)
+                      ? equipment.filter((e) => e !== id)
+                      : [...equipment, id],
+                  )
+                }
+                className={`rounded-xl border px-3 py-2 text-sm ${equipment.includes(id) ? "border-moss bg-moss/10" : "border-mist bg-card"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-ink/55">
+            Exercises without equipment are always available. Your saved body
+            limits still apply.{" "}
+            {showLimitsLink && (
+              <a href="#/constraints" className="text-moss underline">
+                Review limits
+              </a>
+            )}
+          </p>
+        </fieldset>
+      )}
       <label className="flex items-start gap-3 rounded-xl border border-mist p-3 text-sm">
         <input
           type="checkbox"

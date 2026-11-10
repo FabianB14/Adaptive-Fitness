@@ -15,7 +15,18 @@ export type PlanStyle =
   | "mobility"
   | "chair"
   | "core";
+export type TrainingLocation = "home" | "gym";
+export const LOCATION_LABELS: Record<TrainingLocation, string> = {
+  home: "Home",
+  gym: "Gym",
+};
+const EQUIPMENT_IDS = ["bodyweight", "band", "dumbbell", "machine", "barbell"];
+const cleanEquipment = (items: string[]) =>
+  [...new Set(items)].filter((id) => EQUIPMENT_IDS.includes(id));
 export interface TrainingPreferences {
+  locations?: Partial<Record<number, TrainingLocation>>;
+  locationEquipment?: Record<TrainingLocation, string[]>;
+  locationOverrides?: Record<string, TrainingLocation>;
   days: number;
   weekdays: number[]; // Monday = 0
   minutes: number;
@@ -101,7 +112,33 @@ export function trainingPreferences(
   );
   const weekdays =
     picked.length === days ? picked.sort((a, b) => a - b) : DEFAULT_DAYS[days];
+  const locations = Object.fromEntries(
+    Object.entries(value?.locations ?? {}).filter(
+      ([day, loc]) =>
+        Number.isInteger(Number(day)) &&
+        Number(day) >= 0 &&
+        Number(day) < 7 &&
+        (loc === "home" || loc === "gym"),
+    ),
+  );
+  const locationOverrides = Object.fromEntries(
+    Object.entries(value?.locationOverrides ?? {})
+      .filter(
+        ([date, loc]) =>
+          /^\d{4}-\d{2}-\d{2}$/.test(date) && (loc === "home" || loc === "gym"),
+      )
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-56),
+  );
   return {
+    locations,
+    locationOverrides,
+    locationEquipment: value?.locationEquipment
+      ? {
+          home: cleanEquipment(value.locationEquipment.home ?? []),
+          gym: cleanEquipment(value.locationEquipment.gym ?? []),
+        }
+      : undefined,
     days,
     weekdays: [...weekdays],
     minutes: [10, 20, 30, 45].includes(value?.minutes ?? 0)
@@ -220,6 +257,7 @@ export interface WeekDay {
   rest: boolean;
   plan: DayPlan;
   guidance: string;
+  location?: TrainingLocation;
 }
 export interface WeekPlan {
   start: string;
@@ -303,7 +341,12 @@ export function generateWeek(
     previousEffort = focusId !== "mobility";
     if (previousEffort) effortDays++;
     session++;
+    const location = prefs.locationEquipment
+      ? (prefs.locationOverrides?.[day] ?? prefs.locations?.[weekday] ?? "home")
+      : undefined;
     let safe = effectiveConstraints(c, pain, day);
+    if (location && prefs.locationEquipment)
+      safe = { ...safe, equipment: prefs.locationEquipment[location] };
     if (style === "chair") safe = { ...safe, chairMode: true };
     if (gentle) {
       safe = {
@@ -330,6 +373,7 @@ export function generateWeek(
       profile?.goals ?? [],
       focus.slots,
     );
+    if (location) plan.location = location;
     const sets = gentle ? 2 : 3;
     plan.full = fit(plan.full, prefs.minutes, sets);
     plan.light = fit(
@@ -341,6 +385,7 @@ export function generateWeek(
     return {
       date: day,
       title: focus.label,
+      location,
       rest,
       plan,
       guidance:

@@ -1,17 +1,27 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { TabBar } from "./components/TabBar";
 import { detectEnv } from "./lib/env";
 import { ConstraintsScreen } from "./screens/Constraints";
-import { Food } from "./screens/Food";
 import { InstallGate } from "./screens/InstallGate";
 import { Library } from "./screens/Library";
 import { OpenInSafari } from "./screens/OpenInSafari";
 import { ProgressScreen } from "./screens/Progress";
 import { Session } from "./screens/Session";
 import { isOnboarded, Setup } from "./screens/Setup";
-import { WeeklyPlan } from "./screens/WeeklyPlan";
 import { Today } from "./screens/Today";
 import { Upload } from "./screens/Upload";
+
+const Food = lazy(() =>
+  import("./screens/Food").then((module) => ({ default: module.Food })),
+);
+const MealPlan = lazy(() =>
+  import("./screens/MealPlan").then((module) => ({ default: module.MealPlan })),
+);
+const WeeklyPlan = lazy(() =>
+  import("./screens/WeeklyPlan").then((module) => ({
+    default: module.WeeklyPlan,
+  })),
+);
 
 const INSTALL_GATE_DISMISSED_KEY = "af.installGate.dismissed";
 
@@ -64,6 +74,8 @@ export default function App() {
     <Library />
   ) : route.startsWith("#/constraints") ? (
     <ConstraintsScreen />
+  ) : route.startsWith("#/meals") ? (
+    <MealPlan />
   ) : route.startsWith("#/food") ? (
     <Food />
   ) : route.startsWith("#/progress") ? (
@@ -76,7 +88,15 @@ export default function App() {
 
   return (
     <>
-      {screen}
+      <Suspense
+        fallback={
+          <main role="status" className="mx-auto max-w-md px-5 pt-8">
+            Loading your plan…
+          </main>
+        }
+      >
+        {screen}
+      </Suspense>
       <TabBar route={route} />
     </>
   );

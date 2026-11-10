@@ -118,7 +118,7 @@ export function Today() {
       <InstallPrompt />
       <a href="#/plan" className="rounded-3xl border border-moss/30 bg-moss/10 p-5">
         <span className="text-xs uppercase tracking-wide text-moss">{profile?.training ? "Your weekly plan" : "Let's build your week"}</span>
-        <span className="font-display mt-1 block text-lg font-semibold">{scheduled?.title ?? "A plan that fits your life"} →</span>
+        <span className="font-display mt-1 block text-lg font-semibold">{scheduled?.title ?? "A plan that fits your life"}{plan.location ? ` · ${plan.location === "gym" ? "Gym" : "Home"}` : ""} →</span>
         <span className="mt-1 block text-sm text-ink/60">{scheduled ? scheduled.guidance : "Choose your days, time, and style. We'll work around your limits."}</span>
       </a>
 

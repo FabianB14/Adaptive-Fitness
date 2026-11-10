@@ -200,7 +200,7 @@ export function Session({ tier }: { tier: TierKey }) {
       <header className="animate-rise flex items-start justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-ink/40">
-            {TIER_NAMES[tier]} session
+            {TIER_NAMES[tier]} session{plan.location ? ` · ${plan.location === "gym" ? "Gym" : "Home"}` : ""}
           </p>
           <h1 className="font-display mt-0.5 text-[1.75rem] font-semibold leading-tight">
             Let's work

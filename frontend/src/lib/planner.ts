@@ -22,6 +22,7 @@ export interface PlannedItem {
 }
 
 export interface DayPlan {
+  location?: "home" | "gym";
   date: string;
   full: PlannedItem[];
   light: PlannedItem[];

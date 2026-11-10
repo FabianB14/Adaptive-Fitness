@@ -116,7 +116,16 @@ export function Setup() {
       units,
     };
     saveProfile(profile);
-    saveConstraints({ ...loadConstraints(), equipment, chairMode });
+    saveConstraints({
+      ...loadConstraints(),
+      equipment: training.locationEquipment
+        ? [...new Set([
+            ...training.locationEquipment.home,
+            ...training.locationEquipment.gym,
+          ])]
+        : equipment,
+      chairMode,
+    });
     markOnboarded();
     setSaved(profile);
     setStep(4);
@@ -374,7 +383,7 @@ export function Setup() {
                 <p className="mt-1 text-sm text-ink/60">
                   {target.floorApplied
                     ? "Held at the safety floor — we don't go lower."
-                    : `A ${pace} pace below your ~${target.tdee.toLocaleString()} kcal burn.`}
+                    : `An estimated ${target.goal === "gain" ? "muscle-gain" : target.goal === "lose" ? "weight-loss" : "maintenance"} starting target. Adjust your food goal in Food → Meal plans.`}
                 </p>
               </>
             ) : (

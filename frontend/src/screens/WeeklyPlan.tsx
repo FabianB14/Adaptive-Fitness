@@ -14,6 +14,8 @@ import {
   PLAN_STYLES,
   trainingPreferences,
   WEEKDAYS,
+  LOCATION_LABELS,
+  type TrainingLocation,
 } from "../lib/weekly";
 
 export function WeeklyPlan() {
@@ -44,9 +46,40 @@ export function WeeklyPlan() {
     const next = { ...profile, training: trainingPreferences(prefs) };
     saveProfile(next);
     setProfile(next);
-    setConstraints(saveConstraints({ ...constraints, equipment, chairMode }));
+    const availableEquipment = next.training.locationEquipment
+      ? [
+          ...new Set([
+            ...next.training.locationEquipment.home,
+            ...next.training.locationEquipment.gym,
+          ]),
+        ]
+      : equipment;
+    setEquipment(availableEquipment);
+    setConstraints(
+      saveConstraints({
+        ...constraints,
+        equipment: availableEquipment,
+        chairMode,
+      }),
+    );
     setEditing(false);
     setSaved(true);
+  }
+  function changeLocation(date: string, location: TrainingLocation) {
+    if (!profile?.training?.locationEquipment) return;
+    const next = {
+      ...profile,
+      training: trainingPreferences({
+        ...profile.training,
+        locationOverrides: {
+          ...profile.training.locationOverrides,
+          [date]: location,
+        },
+      }),
+    };
+    saveProfile(next);
+    setProfile(next);
+    setPrefs(next.training);
   }
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-5 pb-28 pt-8">
@@ -112,7 +145,10 @@ export function WeeklyPlan() {
               <>
                 <p className="mt-2 text-sm text-ink/65">{style.description}</p>
                 <p className="mt-3 text-sm">
-                  {prefs.days} days · up to {prefs.minutes} min ·{" "}
+                  {prefs.locationEquipment
+                    ? `${week.days.filter((d) => d.location === "gym").length} gym + ${week.days.filter((d) => d.location === "home").length} home days`
+                    : `${prefs.days} days`}{" "}
+                  · up to {prefs.minutes} min ·{" "}
                   {prefs.experience === "regular"
                     ? "regular training"
                     : prefs.experience === "returning"
@@ -197,9 +233,38 @@ export function WeeklyPlan() {
                         ? ` · ${log.tier === "rest" ? "Rest logged" : "Workout logged"}`
                         : ""}
                     </span>
-                    <span className="mt-1 block font-medium">{day.title}</span>
+                    <span className="mt-1 block font-medium">
+                      {day.title}
+                      {day.location
+                        ? ` · ${LOCATION_LABELS[day.location]}`
+                        : ""}
+                    </span>
                   </summary>
                   <div className="space-y-3 border-t border-mist p-4">
+                    {day.location && (
+                      <label className="block text-sm">
+                        Where will you train?
+                        <select
+                          aria-label={`${day.date} workout location`}
+                          value={day.location}
+                          disabled={!!log || day.date < today}
+                          onChange={(e) =>
+                            changeLocation(
+                              day.date,
+                              e.target.value as TrainingLocation,
+                            )
+                          }
+                          className="ml-2 rounded-lg border border-mist bg-paper p-2"
+                        >
+                          <option value="home">Home</option>
+                          <option value="gym">Gym</option>
+                        </select>
+                        <span className="mt-1 block text-xs text-ink/50">
+                          Changes apply to this date only. Exercises update for
+                          that location's equipment.
+                        </span>
+                      </label>
+                    )}
                     <p className="text-sm text-ink/60">{day.guidance}</p>
                     {day.plan.notes.map((n) => (
                       <p className="text-xs text-ochre" key={n}>
