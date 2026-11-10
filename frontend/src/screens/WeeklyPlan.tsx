@@ -15,6 +15,8 @@ import {
   trainingPreferences,
   WEEKDAYS,
   LOCATION_LABELS,
+  WORKOUT_TYPES,
+  type WorkoutType,
   type TrainingLocation,
 } from "../lib/weekly";
 
@@ -81,6 +83,22 @@ export function WeeklyPlan() {
     setProfile(next);
     setPrefs(next.training);
   }
+  function changeWorkoutType(date: string, workoutType: WorkoutType) {
+    if (!profile?.training) return;
+    const next = {
+      ...profile,
+      training: trainingPreferences({
+        ...profile.training,
+        workoutOverrides: {
+          ...profile.training.workoutOverrides,
+          [date]: workoutType,
+        },
+      }),
+    };
+    saveProfile(next);
+    setProfile(next);
+    setPrefs(next.training);
+  }
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-5 pb-28 pt-8">
       <header>
@@ -95,7 +113,10 @@ export function WeeklyPlan() {
           A plan built around your goals, time, equipment, and body limits.
           Light days and rest belong here too.
         </p>
-        <a href="#/calendar" className="mt-3 inline-block text-sm font-medium text-moss underline">
+        <a
+          href="#/calendar"
+          className="mt-3 inline-block text-sm font-medium text-moss underline"
+        >
           View workout history in the calendar →
         </a>
       </header>
@@ -244,6 +265,39 @@ export function WeeklyPlan() {
                     </span>
                   </summary>
                   <div className="space-y-3 border-t border-mist p-4">
+                    {!day.rest && (
+                      <label className="block text-sm">
+                        What kind of workout?
+                        <select
+                          aria-label={`${day.date} workout type`}
+                          value={
+                            profile.training?.workoutOverrides?.[day.date] ??
+                            "auto"
+                          }
+                          disabled={!!log || day.date < today}
+                          onChange={(e) =>
+                            changeWorkoutType(
+                              day.date,
+                              e.target.value as WorkoutType,
+                            )
+                          }
+                          className="mt-1 w-full rounded-lg border border-mist bg-paper p-3"
+                        >
+                          {WORKOUT_TYPES.map((type) => (
+                            <option key={type.id} value={type.id}>
+                              {type.id === "auto"
+                                ? "Use usual choice"
+                                : type.label}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="mt-1 block text-xs text-ink/60">
+                          Saved for this date only. Full, Light, and Minimum
+                          follow this workout type. Change recurring choices in
+                          Adjust plan.
+                        </span>
+                      </label>
+                    )}
                     {day.location && (
                       <label className="block text-sm">
                         Where will you train?

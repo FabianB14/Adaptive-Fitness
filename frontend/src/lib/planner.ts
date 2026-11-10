@@ -22,6 +22,7 @@ export interface PlannedItem {
 }
 
 export interface DayPlan {
+  workoutType?: "weights" | "mobility";
   location?: "home" | "gym";
   date: string;
   full: PlannedItem[];
@@ -54,7 +55,11 @@ const MINIMUM_SLOTS = [
 ];
 
 /** Goals add emphasis slots — they widen a day, never narrow it. */
-function slotsFor(base: string[][], tier: "full" | "light" | "minimum", goals: GoalId[]): string[][] {
+function slotsFor(
+  base: string[][],
+  tier: "full" | "light" | "minimum",
+  goals: GoalId[],
+): string[][] {
   if (tier === "minimum") return base; // five minutes stays five minutes
   const slots = [...base];
   const wantsCore =
@@ -69,7 +74,11 @@ function slotsFor(base: string[][], tier: "full" | "light" | "minimum", goals: G
 
 /** Diastasis-aware core: prefer slow deep-core positions (supine,
     quadruped) over loaded or long-lever work. */
-function goalRank(candidates: Exercise[], pattern: string, goals: GoalId[]): Exercise[] {
+function goalRank(
+  candidates: Exercise[],
+  pattern: string,
+  goals: GoalId[],
+): Exercise[] {
   if (pattern === "core" && goals.includes("diastasis_recti")) {
     const preferred = candidates.filter(
       (e) => e.position === "supine" || e.position === "quadruped",
@@ -189,6 +198,7 @@ export function generatePlan(
   avoidSlugs: Set<string> = new Set(),
   goals: GoalId[] = [],
   focusSlots?: string[][],
+  minimumSlots?: string[][],
 ): DayPlan {
   const allowed = filterPool(pool, c);
   const rand = mulberry32(
@@ -200,9 +210,7 @@ export function generatePlan(
     .filter(([, s]) => s === "suppressed")
     .map(([r]) => REGION_LABELS[r] ?? r);
   if (suppressed.length > 0) {
-    notes.push(
-      `Nothing today loads: ${suppressed.join(", ").toLowerCase()}.`,
-    );
+    notes.push(`Nothing today loads: ${suppressed.join(", ").toLowerCase()}.`);
   }
 
   if (goals.includes("diastasis_recti")) {
@@ -213,9 +221,33 @@ export function generatePlan(
 
   return {
     date: dateISO,
-    full: pickForTier(allowed, c, focusSlots ?? slotsFor(FULL_SLOTS, "full", goals), "full", rand, avoidSlugs, goals),
-    light: pickForTier(allowed, c, focusSlots ?? slotsFor(LIGHT_SLOTS, "light", goals), "light", rand, avoidSlugs, goals),
-    minimum: pickForTier(allowed, c, MINIMUM_SLOTS, "minimum", rand, avoidSlugs, goals),
+    full: pickForTier(
+      allowed,
+      c,
+      focusSlots ?? slotsFor(FULL_SLOTS, "full", goals),
+      "full",
+      rand,
+      avoidSlugs,
+      goals,
+    ),
+    light: pickForTier(
+      allowed,
+      c,
+      focusSlots ?? slotsFor(LIGHT_SLOTS, "light", goals),
+      "light",
+      rand,
+      avoidSlugs,
+      goals,
+    ),
+    minimum: pickForTier(
+      allowed,
+      c,
+      minimumSlots ?? MINIMUM_SLOTS,
+      "minimum",
+      rand,
+      avoidSlugs,
+      goals,
+    ),
     notes,
   };
 }

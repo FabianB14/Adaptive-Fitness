@@ -14,6 +14,7 @@ function storage() {
 const plan = (): DayPlan => ({
   date: "2026-11-10",
   location: "gym",
+  workoutType: "weights",
   notes: [],
   light: [],
   minimum: [],
@@ -34,10 +35,12 @@ describe("workout history snapshots", () => {
       snapshotWorkout(original, "full"),
     );
     original.location = "home";
+    original.workoutType = "mobility";
     item.exercise.name = "Changed exercise";
     item.dose = "1 × 8";
     const saved = loadLogs()[0];
     expect(saved.workout?.location).toBe("gym");
+    expect(saved.workout?.workoutType).toBe("weights");
     expect(saved.workout?.exercises[0]).toMatchObject({ name, dose: "3 × 8" });
     expect(saved.exercises?.[0]).toMatchObject({ setsDone: 2, loadKg: 10 });
   });

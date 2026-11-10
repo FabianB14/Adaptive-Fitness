@@ -196,6 +196,13 @@ function WorkoutDetails({
           </span>
         )}
       </div>
+      {log.workout?.workoutType && (
+        <p className="mt-3 text-sm text-moss">
+          {log.workout.workoutType === "weights"
+            ? "Weights only"
+            : "Mobility only"}
+        </p>
+      )}
       {log.rpe != null && (
         <p className="mt-3 text-sm text-ink/70">Session effort: {log.rpe}/10</p>
       )}

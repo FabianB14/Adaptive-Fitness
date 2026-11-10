@@ -207,3 +207,218 @@ describe("gym and home schedules", () => {
         expect(["none", "band"]).toContain(item.exercise.equipment);
   });
 });
+
+describe("weights-only and mobility-only choices", () => {
+  const prefs = trainingPreferences({
+    days: 5,
+    weekdays: [0, 1, 2, 3, 4],
+    minutes: 30,
+    experience: "regular",
+    style: "strength",
+    locations: { 0: "gym", 1: "gym", 2: "gym", 3: "home", 4: "home" },
+    locationEquipment: { gym: ["machine", "dumbbell"], home: ["bodyweight"] },
+    locationWorkoutTypes: { gym: "weights", home: "mobility" },
+  });
+  const p = { ...profile, training: prefs };
+  const tiers = ["full", "light", "minimum"] as const;
+  it("keeps every tier weight-based on consecutive gym days and reduces recovery volume", () => {
+    const days = generateWeek(defaultConstraints(), "2026-11-10", p).days;
+    for (const day of days.slice(0, 3)) {
+      expect(day.title).toContain("weights");
+      for (const tier of tiers) {
+        expect(day.plan[tier].length).toBeGreaterThan(0);
+        for (const item of day.plan[tier]) {
+          expect(["machine", "dumbbell"]).toContain(item.exercise.equipment);
+          expect(["mobility", "gait"]).not.toContain(
+            item.exercise.movement_pattern,
+          );
+        }
+      }
+    }
+    expect(days[0].plan.full.some((item) => item.sets === 3)).toBe(true);
+    expect(days[1].plan.full.every((item) => item.sets <= 2)).toBe(true);
+    expect(
+      days[1].plan.notes.some((note) => note.includes("lighter weights day")),
+    ).toBe(true);
+    for (const day of days.slice(3, 5))
+      for (const tier of tiers) {
+        expect(day.plan[tier].length).toBeGreaterThan(0);
+        expect(
+          day.plan[tier].every(
+            (item) => item.exercise.movement_pattern === "mobility",
+          ),
+        ).toBe(true);
+      }
+  });
+
+  it("honors explicit weights even with flexibility goals and a mobility template", () => {
+    const week = generateWeek(defaultConstraints(), "2026-11-10", {
+      ...p,
+      goals: ["flexibility", "endurance"],
+      training: { ...prefs, style: "mobility" },
+    });
+    for (const day of week.days.filter((day) => day.location === "gym"))
+      for (const tier of tiers) {
+        expect(day.plan[tier].length).toBeGreaterThan(0);
+        expect(
+          day.plan[tier].every((item) =>
+            ["dumbbell", "machine"].includes(item.exercise.equipment),
+          ),
+        ).toBe(true);
+      }
+  });
+
+  it("reduces recovery-day work even with a ten-minute time budget", () => {
+    for (const minutes of [10, 20, 30, 45]) {
+      const days = generateWeek(defaultConstraints(), "2026-11-10", {
+        ...p,
+        training: { ...prefs, minutes },
+      }).days;
+      const sets = (day: (typeof days)[number]) =>
+        day.plan.full.reduce((n, item) => n + item.sets, 0);
+      expect(sets(days[1])).toBeGreaterThan(0);
+      expect(sets(days[1])).toBeLessThan(sets(days[0]));
+    }
+  });
+
+  it("prioritizes a date switch over weekdays and location without changing the following week", () => {
+    const c = defaultConstraints();
+    const withWeekday = {
+      ...p,
+      training: { ...prefs, workoutTypes: { 1: "mobility" as const } },
+    };
+    expect(generateWeek(c, "2026-11-10", withWeekday).days[1].workoutType).toBe(
+      "mobility",
+    );
+    const switched = {
+      ...withWeekday,
+      training: {
+        ...withWeekday.training,
+        workoutOverrides: { "2026-11-10": "weights" as const },
+      },
+    };
+    const day = generateWeek(c, "2026-11-10", switched).days[1];
+    expect(day.workoutType).toBe("weights");
+    expect(day.plan.full.length).toBeGreaterThan(0);
+    expect(generateWeek(c, "2026-11-17", switched).days[1].workoutType).toBe(
+      "mobility",
+    );
+    expect(planForDate(c, day.date, switched)).toEqual(day.plan);
+    const reset = {
+      ...switched,
+      training: {
+        ...switched.training,
+        workoutOverrides: { "2026-11-10": "auto" as const },
+      },
+    };
+    expect(generateWeek(c, "2026-11-10", reset).days[1].workoutType).toBe(
+      "mobility",
+    );
+    const changedLocation = {
+      ...p,
+      training: {
+        ...prefs,
+        locationOverrides: { "2026-11-10": "home" as const },
+      },
+    };
+    expect(
+      generateWeek(c, "2026-11-10", changedLocation).days[1].workoutType,
+    ).toBe("mobility");
+  });
+
+  it("does not fill a weight day with mobility when only bodyweight or bands are available", () => {
+    const c = { ...defaultConstraints(), equipment: ["bodyweight", "band"] };
+    const day = generateWeek(c, "2026-11-10", {
+      ...p,
+      training: {
+        ...prefs,
+        locationEquipment: undefined,
+        workoutTypes: { 1: "weights" },
+      },
+    }).days[1];
+    for (const tier of tiers) expect(day.plan[tier]).toEqual([]);
+    expect(day.guidance).toContain("No weight exercises");
+    expect(day.plan.notes.some((note) => note.includes("equipment"))).toBe(
+      true,
+    );
+  });
+
+  it("retains pain, chair, impact, range-of-motion, and avoided-pattern restrictions", () => {
+    const c = {
+      ...defaultConstraints(),
+      equipment: ["machine", "dumbbell"],
+      chairMode: true,
+      maxImpact: "low",
+      avoidPatterns: ["axial_loading"],
+    };
+    c.romLimits.shoulder = "limited";
+    const week = generateWeek(c, "2026-11-10", p, new Set(), [
+      { id: "pain", date: "2026-11-09", region: "knee" },
+    ]);
+    const safe = {
+      ...c,
+      regions: { ...c.regions, knee: "suppressed" as const },
+    };
+    const gymItems = week.days
+      .filter((d) => d.location === "gym")
+      .flatMap((d) => tiers.flatMap((tier) => d.plan[tier]));
+    expect(gymItems.length).toBeGreaterThan(0);
+    for (const item of gymItems) {
+      expect(allowedByConstraints(item.exercise, safe)).toBe(true);
+      expect(item.exercise.joints_loaded).not.toContain("knee");
+    }
+  });
+
+  it("uses gentler weighted variants and lower volume for beginners", () => {
+    const day = generateWeek(defaultConstraints(), "2026-11-10", {
+      ...p,
+      training: { ...prefs, experience: "new" },
+    }).days[1];
+    for (const tier of tiers) {
+      expect(day.plan[tier].length).toBeGreaterThan(0);
+      for (const item of day.plan[tier]) {
+        expect(item.exercise.intensity_tier).not.toBe("full");
+        expect(item.sets).toBeLessThanOrEqual(2);
+        expect(["machine", "dumbbell"]).toContain(item.exercise.equipment);
+      }
+    }
+  });
+
+  it("ignores invalid saved workout choices", () => {
+    const loaded = trainingPreferences(
+      JSON.parse(
+        JSON.stringify({
+          ...prefs,
+          workoutTypes: { 1: "weights", 9: "mobility", 2: "unknown" },
+          locationWorkoutTypes: {
+            gym: "weights",
+            home: "invalid",
+            anywhere: "mobility",
+          },
+          workoutOverrides: {
+            "2026-11-10": "mobility",
+            invalid: "weights",
+            "2026-11-11": "invalid",
+          },
+        }),
+      ),
+    );
+    expect(loaded.workoutTypes).toEqual({ 1: "weights" });
+    expect(loaded.locationWorkoutTypes).toEqual({ gym: "weights" });
+    expect(loaded.workoutOverrides).toEqual({ "2026-11-10": "mobility" });
+  });
+
+  it("does not treat Sunday's mobility as a weight workout before Monday", () => {
+    const day = generateWeek(defaultConstraints(), "2026-11-10", {
+      ...p,
+      training: {
+        ...prefs,
+        days: 2,
+        weekdays: [0, 6],
+        locations: { 0: "gym", 6: "home" },
+      },
+    }).days[0];
+    expect(day.plan.full.some((item) => item.sets === 3)).toBe(true);
+    expect(day.title).not.toContain("lighter");
+  });
+});

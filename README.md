@@ -193,3 +193,19 @@ logs display only the details they actually contain. History stays on this devic
 Choose **Limits → Appearance → Pink** for blush surfaces, rose accents, and plum
 text across the app. The choice persists on this device and stays pink even when
 the phone uses dark mode. Auto, Light, and Dark remain available.
+
+## Choose weights or mobility for each day
+
+In **Your week → Adjust plan**, set **Usual gym workout** to **Weights only**
+and choose the machines, dumbbells, or barbell available there. Choose the home
+workout type separately. **Workout type by weekday** sets recurring exceptions;
+**What kind of workout?** inside a dated session changes just that date. Choose
+**Use usual choice** to remove a date's exception. The same controls are available
+during setup, and the three-gym/two-home preset uses gym weights and home mobility.
+
+Weights-only days keep weighted exercises in Full, Light, and Minimum. Automatic
+recovery adjustments shorten the session and reduce sets instead of substituting
+mobility. Mobility-only days use mobility movements in every tier. Equipment,
+pain reports, chair mode, impact, and range-of-motion limits still filter all
+choices. If no matching weights are available, the app explains the gap instead
+of inserting an unrelated movement. New calendar entries retain the workout type.

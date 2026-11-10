@@ -8,6 +8,7 @@ import { type DayPlan } from "./planner";
 export type TierChoice = "full" | "light" | "minimum" | "rest";
 
 export interface WorkoutSnapshot {
+  workoutType?: DayPlan["workoutType"];
   location?: "home" | "gym";
   exercises: { slug: string; name: string; dose: string }[];
 }
@@ -18,6 +19,7 @@ export function snapshotWorkout(
   tier: Exclude<TierChoice, "rest">,
 ): WorkoutSnapshot {
   return {
+    ...(plan.workoutType ? { workoutType: plan.workoutType } : {}),
     location: plan.location,
     exercises: plan[tier].map(({ exercise, dose }) => ({
       slug: exercise.slug,

@@ -16,6 +16,14 @@ export type PlanStyle =
   | "chair"
   | "core";
 export type TrainingLocation = "home" | "gym";
+export type WorkoutType = "auto" | "weights" | "mobility";
+export const WORKOUT_TYPES: { id: WorkoutType; label: string }[] = [
+  { id: "auto", label: "Follow weekly plan" },
+  { id: "weights", label: "Weights only" },
+  { id: "mobility", label: "Mobility only" },
+];
+const isWorkoutType = (value: unknown): value is WorkoutType =>
+  WORKOUT_TYPES.some((type) => type.id === value);
 export const LOCATION_LABELS: Record<TrainingLocation, string> = {
   home: "Home",
   gym: "Gym",
@@ -24,6 +32,9 @@ const EQUIPMENT_IDS = ["bodyweight", "band", "dumbbell", "machine", "barbell"];
 const cleanEquipment = (items: string[]) =>
   [...new Set(items)].filter((id) => EQUIPMENT_IDS.includes(id));
 export interface TrainingPreferences {
+  locationWorkoutTypes?: Partial<Record<TrainingLocation, WorkoutType>>;
+  workoutTypes?: Partial<Record<number, WorkoutType>>;
+  workoutOverrides?: Record<string, WorkoutType>;
   locations?: Partial<Record<number, TrainingLocation>>;
   locationEquipment?: Record<TrainingLocation, string[]>;
   locationOverrides?: Record<string, TrainingLocation>;
@@ -131,6 +142,30 @@ export function trainingPreferences(
       .slice(-56),
   );
   return {
+    locationWorkoutTypes: Object.fromEntries(
+      Object.entries(value?.locationWorkoutTypes ?? {}).filter(
+        ([location, type]) =>
+          (location === "home" || location === "gym") && isWorkoutType(type),
+      ),
+    ),
+    workoutTypes: Object.fromEntries(
+      Object.entries(value?.workoutTypes ?? {}).filter(
+        ([day, type]) =>
+          Number.isInteger(Number(day)) &&
+          Number(day) >= 0 &&
+          Number(day) < 7 &&
+          isWorkoutType(type),
+      ),
+    ),
+    workoutOverrides: Object.fromEntries(
+      Object.entries(value?.workoutOverrides ?? {})
+        .filter(
+          ([date, type]) =>
+            /^\d{4}-\d{2}-\d{2}$/.test(date) && isWorkoutType(type),
+        )
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-56),
+    ),
     locations,
     locationOverrides,
     locationEquipment: value?.locationEquipment
@@ -251,6 +286,53 @@ const ROTATIONS: Record<Exclude<PlanStyle, "auto">, string[]> = {
   chair: ["full", "mobility", "core"],
   core: ["core", "mobility", "full"],
 };
+const WEIGHT_FOCUS = [
+  {
+    label: "Full-body weights",
+    slots: [
+      ["squat", "hinge"],
+      ["push_h", "push_v"],
+      ["pull_h", "pull_v"],
+      ["hinge", "squat"],
+      ["carry", "core", "rotate"],
+    ],
+  },
+  {
+    label: "Upper-body weights",
+    slots: [
+      ["push_h", "push_v"],
+      ["pull_h", "pull_v"],
+      ["push_v", "push_h"],
+      ["pull_v", "pull_h"],
+      ["carry", "core", "rotate"],
+    ],
+  },
+  {
+    label: "Lower-body weights",
+    slots: [
+      ["squat", "hinge"],
+      ["hinge", "squat"],
+      ["carry", "core", "rotate"],
+      ["squat", "hinge"],
+    ],
+  },
+];
+
+/** Explicit dates win over weekday choices, then location defaults. */
+export function workoutTypeForDate(
+  prefs: TrainingPreferences,
+  date: string,
+  weekday: number,
+  location?: TrainingLocation,
+): WorkoutType {
+  return (
+    [
+      prefs.workoutOverrides?.[date],
+      prefs.workoutTypes?.[weekday],
+      location ? prefs.locationWorkoutTypes?.[location] : undefined,
+    ].find((type) => type === "weights" || type === "mobility") ?? "auto"
+  );
+}
 export interface WeekDay {
   date: string;
   title: string;
@@ -258,6 +340,7 @@ export interface WeekDay {
   plan: DayPlan;
   guidance: string;
   location?: TrainingLocation;
+  workoutType?: WorkoutType;
 }
 export interface WeekPlan {
   start: string;
@@ -304,8 +387,17 @@ export function generateWeek(
   const style = chooseStyle(profile, c);
   const start = mondayOf(date);
   let session = 0;
+  let weightSession = 0;
   let effortDays = 0;
-  let previousEffort = prefs.weekdays.includes(6);
+  const lastSunday = addDays(start, -1);
+  const sundayLocation = prefs.locationEquipment
+    ? (prefs.locationOverrides?.[lastSunday] ?? prefs.locations?.[6] ?? "home")
+    : undefined;
+  const sundayType = workoutTypeForDate(prefs, lastSunday, 6, sundayLocation);
+  let previousEffort =
+    prefs.weekdays.includes(6) &&
+    sundayType !== "mobility" &&
+    !(sundayType === "auto" && style === "mobility");
   const gentle =
     prefs.experience !== "regular" ||
     profile?.pace === "gentle" ||
@@ -330,20 +422,30 @@ export function generateWeek(
         guidance: "Rest is part of your plan. No catch-up workout needed.",
       };
     }
-    // Consecutive training days alternate effort; extra days are recovery work.
+    const location = prefs.locationEquipment
+      ? (prefs.locationOverrides?.[day] ?? prefs.locations?.[weekday] ?? "home")
+      : undefined;
+    const workoutType = workoutTypeForDate(prefs, day, weekday, location);
+    // Auto keeps its recovery rotation. Explicit weight days reduce volume
+    // when recovery is due instead of changing the requested workout type.
     const recovery = effortDays >= 3 || previousEffort;
     const focusId = recovery
       ? "mobility"
       : prefs.days === 1 && (style === "strength" || style === "muscle")
         ? "full"
         : ROTATIONS[style][session % ROTATIONS[style].length];
-    const focus = FOCUS[focusId];
-    previousEffort = focusId !== "mobility";
+    const focus =
+      workoutType === "weights"
+        ? WEIGHT_FOCUS[weightSession++ % WEIGHT_FOCUS.length]
+        : workoutType === "mobility"
+          ? FOCUS.mobility
+          : FOCUS[focusId];
+    const mobility =
+      workoutType === "mobility" ||
+      (workoutType === "auto" && focusId === "mobility");
+    previousEffort = !mobility;
     if (previousEffort) effortDays++;
     session++;
-    const location = prefs.locationEquipment
-      ? (prefs.locationOverrides?.[day] ?? prefs.locations?.[weekday] ?? "home")
-      : undefined;
     let safe = effectiveConstraints(c, pain, day);
     if (location && prefs.locationEquipment)
       safe = { ...safe, equipment: prefs.locationEquipment[location] };
@@ -365,33 +467,67 @@ export function generateWeek(
           "spinal_flexion_under_load",
         ],
       };
+    let pool = gentle
+      ? exercises.filter((e) => e.intensity_tier !== "full")
+      : exercises;
+    if (workoutType === "weights")
+      pool = pool.filter(
+        (e) =>
+          ["dumbbell", "machine", "barbell"].includes(e.equipment) &&
+          e.movement_pattern !== "mobility" &&
+          e.movement_pattern !== "gait",
+      );
+    if (workoutType === "mobility")
+      pool = pool.filter((e) => e.movement_pattern === "mobility");
     const plan = generatePlan(
       safe,
       day,
-      gentle ? exercises.filter((e) => e.intensity_tier !== "full") : exercises,
+      pool,
       avoid,
       profile?.goals ?? [],
       focus.slots,
+      workoutType === "auto" ? undefined : focus.slots.slice(0, 2),
     );
     if (location) plan.location = location;
-    const sets = gentle ? 2 : 3;
-    plan.full = fit(plan.full, prefs.minutes, sets);
+    if (workoutType !== "auto") plan.workoutType = workoutType;
+    const lighterWeights = workoutType === "weights" && recovery;
+    const sets = gentle || lighterWeights ? 2 : 3;
+    const sessionMinutes = lighterWeights
+      ? Math.max(5, Math.floor(prefs.minutes * 0.7))
+      : prefs.minutes;
+    plan.full = fit(plan.full, sessionMinutes, sets);
     plan.light = fit(
       plan.light,
-      Math.min(prefs.minutes, 15),
+      Math.min(sessionMinutes, 15),
       Math.min(sets, 2),
     );
     plan.minimum = fit(plan.minimum, 5, 1);
+    if (workoutType === "weights") {
+      plan.notes.push(
+        "Weights only: use your selected dumbbells, machines, or barbell. Light and Minimum keep weight exercises with fewer sets.",
+      );
+      if (lighterWeights)
+        plan.notes.push(
+          "A lighter weights day for recovery: fewer sets, comfortable loads, and extra rest between sets. You can move this day or choose rest if you need more recovery.",
+        );
+      if (plan.full.length === 0)
+        plan.notes.push(
+          "No weight exercises match this day's equipment and movement limits. Update the equipment for this location, choose another workout type, or rest.",
+        );
+    }
     return {
       date: day,
-      title: focus.label,
+      title: lighterWeights ? `${focus.label} · lighter day` : focus.label,
       location,
+      workoutType,
       rest,
       plan,
       guidance:
         plan.full.length === 0
-          ? "No exercises fit these limits. Review your limits with your clinician or choose rest; the plan will not override them."
-          : recovery || style === "mobility"
+          ? workoutType === "weights"
+            ? "No weight exercises match this equipment and your movement limits. Review the equipment, change workout type, or choose rest."
+            : "No exercises fit these limits. Review your limits with your clinician or choose rest; the plan will not override them."
+          : mobility
             ? "Easy movement today. Stay within a comfortable range."
             : "Start gently. Choose Light or Minimum if energy is low; stop any movement that hurts.",
     };

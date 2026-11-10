@@ -2,6 +2,8 @@ import {
   PLAN_STYLES,
   WEEKDAYS,
   LOCATION_LABELS,
+  WORKOUT_TYPES,
+  type WorkoutType,
   type TrainingLocation,
   trainingPreferences,
   type TrainingPreferences,
@@ -56,7 +58,8 @@ export function TrainingQuestions({
           ))}
         </select>
         <span className="mt-1 block text-xs text-ink/55">
-          Four or more days include gentle recovery sessions.
+          Automatic plans include recovery days. Weights-only choices use fewer
+          sets when recovery is due.
         </span>
       </label>
       <fieldset>
@@ -146,6 +149,9 @@ export function TrainingQuestions({
                   4: "gym",
                 },
                 locationOverrides: {},
+                locationWorkoutTypes: { gym: "weights", home: "mobility" },
+                workoutTypes: {},
+                workoutOverrides: {},
                 locationEquipment: value.locationEquipment ?? {
                   home: ["bodyweight"],
                   gym: ["bodyweight", "band", "dumbbell", "machine", "barbell"],
@@ -166,6 +172,11 @@ export function TrainingQuestions({
                 locationEquipment: e.target.checked
                   ? { home: ["bodyweight"], gym: [...equipment] }
                   : undefined,
+                locationWorkoutTypes: {
+                  gym: "weights",
+                  home: "auto",
+                  ...value.locationWorkoutTypes,
+                },
               })
             }
           />
@@ -207,6 +218,29 @@ export function TrainingQuestions({
                 <legend className="mb-2 text-sm font-medium">
                   {LOCATION_LABELS[location]} equipment
                 </legend>
+                <label className="mb-3 block text-sm">
+                  Usual {location} workout
+                  <select
+                    aria-label={`Usual ${location} workout type`}
+                    className={field}
+                    value={value.locationWorkoutTypes?.[location] ?? "auto"}
+                    onChange={(e) =>
+                      onChange({
+                        ...value,
+                        locationWorkoutTypes: {
+                          ...value.locationWorkoutTypes,
+                          [location]: e.target.value as WorkoutType,
+                        },
+                      })
+                    }
+                  >
+                    {WORKOUT_TYPES.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {EQUIPMENT.map(([id, label]) => (
                     <button
@@ -242,6 +276,48 @@ export function TrainingQuestions({
           </>
         )}
       </section>
+      <details className="rounded-2xl border border-mist p-4">
+        <summary className="cursor-pointer font-medium">
+          Workout type by weekday
+        </summary>
+        <p className="mt-2 text-xs text-ink/60">
+          Keep a weekly routine, or follow your location's usual choice. You can
+          also switch a single date in Your week.
+        </p>
+        <div className="mt-3 space-y-3">
+          {value.weekdays.map((day) => (
+            <label key={day} className="block text-sm">
+              {WEEKDAYS[day]} workout
+              <select
+                aria-label={`${WEEKDAYS[day]} usual workout type`}
+                className={field}
+                value={value.workoutTypes?.[day] ?? "auto"}
+                onChange={(e) =>
+                  onChange({
+                    ...value,
+                    workoutTypes: {
+                      ...value.workoutTypes,
+                      [day]: e.target.value as WorkoutType,
+                    },
+                  })
+                }
+              >
+                {WORKOUT_TYPES.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.id === "auto"
+                      ? "Follow location / weekly plan"
+                      : type.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+      </details>
+      <p className="text-xs text-ink/60">
+        Weights only uses dumbbells, machines, or a barbell. Mobility only uses
+        mobility movements. Your equipment and body limits apply to both.
+      </p>
       {!value.locationEquipment && (
         <fieldset>
           <legend className="mb-2 text-sm">What equipment can you use?</legend>
@@ -265,8 +341,9 @@ export function TrainingQuestions({
             ))}
           </div>
           <p className="mt-2 text-xs text-ink/55">
-            Exercises without equipment are always available. Your saved body
-            limits still apply.{" "}
+            Automatic and mobility plans can include exercises without
+            equipment. Weights-only days use the selected weights. Your saved
+            body limits still apply.{" "}
             {showLimitsLink && (
               <a href="#/constraints" className="text-moss underline">
                 Review limits

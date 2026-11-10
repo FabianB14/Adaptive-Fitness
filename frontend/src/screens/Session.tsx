@@ -168,8 +168,8 @@ export function Session({ tier }: { tier: TierKey }) {
 
   if (items.length === 0) {
     return <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-5 pb-28 pt-8">
-      <h1 className="font-display text-2xl font-semibold">Room to rest</h1>
-      <p className="text-sm text-ink/60">There are no exercises in this session. Today may be a rest day, or your current limits may exclude these movements.</p>
+      <h1 className="font-display text-2xl font-semibold">{plan.workoutType === "weights" ? "No matching weight exercises" : "Room to rest"}</h1>
+      <p className="text-sm text-ink/60">{plan.workoutType === "weights" ? "Review this day's gym/home equipment and workout type in Your week. Your movement limits still apply." : "There are no exercises in this session. Today may be a rest day, or your current limits may exclude these movements."}</p>
       <a href="#/plan" className="rounded-xl bg-moss px-4 py-3 text-center text-paper">Review my week</a>
       <a href="#/" className="text-center text-sm text-moss">Back to Today</a>
     </main>;
@@ -207,6 +207,7 @@ export function Session({ tier }: { tier: TierKey }) {
           <h1 className="font-display mt-0.5 text-[1.75rem] font-semibold leading-tight">
             Let's work
           </h1>
+          {plan.workoutType && <p className="mt-1 text-sm text-moss">{plan.workoutType === "weights" ? "Weights only" : "Mobility only"}</p>}
         </div>
         <a href="#/" className="mt-1 text-sm text-ink/50 underline-offset-2 hover:underline">
           Pause
