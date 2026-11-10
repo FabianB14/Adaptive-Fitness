@@ -1,10 +1,11 @@
+import { ExerciseDemo } from "../components/ExerciseDemo";
 import { useMemo, useState } from "react";
 import { loadConstraints } from "../lib/constraints";
 import { daySignals, effectiveConstraints } from "../lib/engine";
 import { ExerciseFigure } from "../components/ExerciseFigure";
 import { addLog, loadLogs, loadPainEvents } from "../lib/logs";
 import { loadProfile } from "../lib/nutrition";
-import { generatePlan } from "../lib/planner";
+import { planForDate } from "../lib/weekly";
 import {
   applySession,
   loadStates,
@@ -96,12 +97,11 @@ export function Session({ tier }: { tier: TierKey }) {
   const unit = weightUnit(units);
   const plan = useMemo(
     () =>
-      generatePlan(
+      planForDate(
         constraints,
         date,
-        undefined,
+        profile,
         slugsToAvoid(exStates),
-        profile?.goals ?? [],
       ),
     [constraints, date, exStates, profile],
   );
@@ -112,7 +112,8 @@ export function Session({ tier }: { tier: TierKey }) {
     const init: Record<string, ItemState> = {};
     for (const item of items) {
       const sug = suggestion(item.exercise.slug, exStates, signals.multiplier, date, pace);
-      init[item.exercise.slug] = stored[item.exercise.slug] ?? {
+      const previous = stored[item.exercise.slug];
+      init[item.exercise.slug] = previous ? { ...previous, done: Math.min(item.sets, Math.max(0, previous.done)) } : {
         loadKg: sug.loadKg != null ? String(displayWeight(sug.loadKg, units)) : "",
         done: 0,
       };
@@ -162,6 +163,15 @@ export function Session({ tier }: { tier: TierKey }) {
     saveStates(states);
     clearActive();
     setFinished(true);
+  }
+
+  if (items.length === 0) {
+    return <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-5 pb-28 pt-8">
+      <h1 className="font-display text-2xl font-semibold">Room to rest</h1>
+      <p className="text-sm text-ink/60">There are no exercises in this session. Today may be a rest day, or your current limits may exclude these movements.</p>
+      <a href="#/plan" className="rounded-xl bg-moss px-4 py-3 text-center text-paper">Review my week</a>
+      <a href="#/" className="text-center text-sm text-moss">Back to Today</a>
+    </main>;
   }
 
   if (finished) {
@@ -241,6 +251,7 @@ export function Session({ tier }: { tier: TierKey }) {
                 <span className="font-data shrink-0 text-sm text-ink/60">{item.dose}</span>
               </div>
 
+              <details className="mt-3"><summary className="cursor-pointer text-sm text-moss">Watch movement & technique</summary><ExerciseDemo exercise={item.exercise} /></details>
               <div className="mt-3 flex items-center justify-between gap-3">
                 {isStrength ? (
                   <label className="flex items-center gap-1.5 text-xs text-ink/50">

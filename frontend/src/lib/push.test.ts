@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   activeReminders,
+  readyRegistration,
+  runDiagnostics,
+  pushProblemMessage,
   prefsWithDefaults,
   urlBase64ToUint8Array,
   type PushPrefs,
@@ -82,5 +85,28 @@ describe("reminder preferences", () => {
 
   it("an all-off state sends an empty map rather than failing", () => {
     expect(activeReminders({ enabled: true, reminders: {} })).toEqual({});
+  });
+});
+
+
+describe("notification failure recovery", () => {
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+  it("bounds service worker waits instead of leaving settings busy forever", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("navigator", { serviceWorker: { ready: new Promise(() => {}) } });
+    vi.stubGlobal("window", { PushManager: {}, Notification: {} });
+    const outcome = expect(readyRegistration()).rejects.toThrow("isn't ready");
+    await vi.advanceTimersByTimeAsync(8000);
+    await outcome;
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it("returns a diagnostic instead of crashing when notifications are unsupported", async () => {
+    vi.stubGlobal("navigator", { userAgent: "browser", platform: "Linux", maxTouchPoints: 0 });
+    vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
+    const checks = await runDiagnostics(null);
+    expect(checks.find(c=>c.label === "Browser support")?.ok).toBe(false);
+  });
+  it("explains the subject error as a server setup problem", () => {
+    expect(pushProblemMessage("AF_VAPID_SUBJECT must start with mailto:")).toContain("app owner");
   });
 });

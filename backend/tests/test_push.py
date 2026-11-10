@@ -215,3 +215,32 @@ def test_scheduler_sends_each_due_kind_once(configured, monkeypatch):
     assert sorted(tags) == ["af-daily_plan", "af-move"]
     # Second tick in the same hour: already marked, nothing sent.
     assert push.send_due_reminders(now) == 0
+
+
+@pytest.mark.parametrize('value,canonical', [
+    (' owner@fitness.org ', 'mailto:owner@fitness.org'),
+    ('"owner@fitness.org"', 'mailto:owner@fitness.org'),
+    ('mailto:owner@fitness.org', 'mailto:owner@fitness.org'),
+    ('https://fitness.org/contact', 'https://fitness.org/contact'),
+])
+def test_subject_accepts_real_contact_forms(monkeypatch, value, canonical):
+    monkeypatch.setattr(settings, 'vapid_subject', value)
+    assert push.vapid_subject() == canonical
+    assert push.subject_problem() is None
+
+
+@pytest.mark.parametrize('value', ['', 'mailto:', 'https://', 'not an email', 'mailto:owner@fitness.invalid'])
+def test_invalid_subject_blocks_subscription_with_actionable_error(configured, monkeypatch, value):
+    monkeypatch.setattr(settings, 'vapid_subject', value)
+    response = client.post('/push/subscribe', json={'subscription': SUB, 'reminders': {'daily_plan': 9}})
+    assert response.status_code == 503
+    assert 'AF_VAPID_SUBJECT' in response.json()['detail']
+
+
+def test_send_uses_canonical_subject(configured, monkeypatch):
+    import pywebpush
+    sent = []
+    monkeypatch.setattr(settings, 'vapid_subject', 'owner@fitness.org')
+    monkeypatch.setattr(pywebpush, 'webpush', lambda **kwargs: sent.append(kwargs))
+    assert push.send_push(SUB, 'Hello', 'Your plan is ready') is True
+    assert sent[0]['vapid_claims']['sub'] == 'mailto:owner@fitness.org'

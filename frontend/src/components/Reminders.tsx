@@ -112,8 +112,9 @@ export function Reminders() {
 
   async function check() {
     setBusy("check");
-    setChecks(await runDiagnostics(apiBase ?? null));
-    setBusy(null);
+    try { setChecks(await runDiagnostics(apiBase ?? null)); }
+    catch (e) { setNote({ tone: "warn", text: e instanceof Error ? e.message : "Could not finish the check. Please retry." }); }
+    finally { setBusy(null); }
   }
 
   async function localTest() {
@@ -345,6 +346,7 @@ export function Reminders() {
               <span className="flex-1">
                 <span className="font-medium">{c.label}</span>
                 <span className="block text-ink/55">{c.detail}</span>
+                {c.technicalDetail && <details className="mt-2"><summary className="cursor-pointer underline">Details for the app owner</summary><p className="mt-1">{c.technicalDetail}</p></details>}
               </span>
             </li>
           ))}

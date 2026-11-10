@@ -130,3 +130,27 @@ uptime pinger (or a paid instance) if the daily nudge matters.
 8. ✅ **Share cards** — body-free by construction: canvas-rendered cards (streaks, sessions, stickers, movement — never weight, measurements, or calories) shared through the native share sheet with a PNG download fallback. US units (lb, ft/in, inches) landed alongside as a display-only layer — storage stays metric, so switching is instant and lossless.
 8b. ✅ **Walk tracking & two-pose figures** *(client request)* — in-app walk tracker (GPS distance → steps via height-based stride, time-based cadence fallback, honest copy about iOS's no-background-pedometer limits for web apps) feeding the weekly activity totals; every exercise figure now animates between its start and end pose (standing → squatting) with a static-ghost fallback for reduced motion.
 9. ✅ **Push notifications** — five kinds of cute nudge (🌱 today's plan, 👟 movement snack, 🍓 food check-in, 🌙 evening check-in, ⭐ weekly celebration), each switched on independently with its own hour and its own rotating message pool. Every pool is tested for banned guilt words. A per-kind "Try it" button and a *Run a check* self-diagnostic (install state → permission → service worker → server reachability → VAPID health → subscription validity) mean a silent failure always names its own cause.
+
+## Weekly plans and movement guides
+
+Setup now includes workout days, preferred weekdays, session length, experience,
+plan style, and equipment. Existing users can open **Today → Your weekly plan**
+to set these. The starter, balanced, strength, muscle, endurance, mobility, core,
+and chair-friendly templates share the same generator as Today and Session.
+Saved limits, reported pain, and exercise substitutions still apply. Consecutive
+training days include gentle movement; rest days are shown explicitly. Plans
+are stored on the device with the profile and can be changed at any time.
+
+Expand any exercise in the library, a weekly plan, or a workout's **Watch movement
+& technique** section for a larger two-pose stick figure with playback controls
+and its specific cue. The figures illustrate movement families; the cue explains
+the exercise variation. Reduced-motion preferences keep the figures still.
+
+If reminders report an invalid `AF_VAPID_SUBJECT`, update that variable in the
+Render service's **Environment** settings to `mailto:` followed by your real
+contact email address (without surrounding quotes), then save and redeploy.
+The backend also accepts a bare email address and adds `mailto:` when sending.
+Keep your existing matching VAPID key pair. Once `/push/config` reports
+`healthy: true`, turn reminders on and use **Try it** on the device. The service
+must stay awake for scheduled sends; a sleeping free instance cannot run the
+minute-by-minute reminder loop.

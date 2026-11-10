@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+from urllib.parse import urlsplit
 import threading
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
@@ -275,6 +277,37 @@ def is_configured() -> bool:
     return bool(settings.vapid_public_key and settings.vapid_private_key)
 
 
+def vapid_subject() -> str:
+    """Accept a bare contact email as well as a VAPID contact URI."""
+    value = settings.vapid_subject.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("\"", "'"):
+        value = value[1:-1].strip()
+    if re.fullmatch(r"[^\s@<>:]+@[^\s@<>:]+\.[^\s@<>:]+", value):
+        value = "mailto:" + value
+    return value
+
+
+def subject_problem() -> str | None:
+    value = vapid_subject()
+    host = ""
+    if value.startswith("mailto:") and re.fullmatch(r"[^\s@<>:]+@[^\s@<>:]+\.[^\s@<>:]+", value[7:]):
+        host = value.rsplit("@", 1)[1]
+    elif value.startswith("https://"):
+        try:
+            parsed = urlsplit(value)
+            if parsed.hostname and "." in parsed.hostname and not parsed.username and not re.search(r"\s", value):
+                host = parsed.hostname
+        except ValueError:
+            pass
+    if not host:
+        return ("AF_VAPID_SUBJECT needs a real contact email (mailto: followed by your email) "
+                "or a full https:// contact URL. In Render, open the service's Environment "
+                "settings, update AF_VAPID_SUBJECT, then save and redeploy.")
+    if host.lower().endswith(".invalid"):
+        return "AF_VAPID_SUBJECT is still the placeholder address. Replace it with your real contact email, then redeploy."
+    return None
+
+
 def key_health() -> dict[str, Any]:
     """Self-check the VAPID configuration so the app can say precisely
     what's wrong instead of 'that didn't work'."""
@@ -313,17 +346,9 @@ def key_health() -> dict[str, Any]:
             else:
                 problems.append(f"AF_VAPID_PRIVATE_KEY could not be read: {exc}")
 
-    subject = settings.vapid_subject.strip()
-    if not (subject.startswith("mailto:") or subject.startswith("https://")):
-        problems.append(
-            "AF_VAPID_SUBJECT must start with 'mailto:' or 'https://'."
-        )
-    elif subject.endswith(".invalid"):
-        problems.append(
-            "AF_VAPID_SUBJECT is still the placeholder address. Some push "
-            "services (Apple's especially) reject unreachable domains — set "
-            "it to a real mailto: address."
-        )
+    problem = subject_problem()
+    if problem:
+        problems.append(problem)
 
     return {"ok": not problems, "problems": problems}
 
@@ -334,12 +359,14 @@ def send_push(subscription: dict[str, Any], title: str, body: str, tag: str = "a
     module works in test environments without pywebpush installed."""
     from pywebpush import WebPushException, webpush
 
+    if subject_problem():
+        return False
     try:
         webpush(
             subscription_info=subscription,
             data=json.dumps({"title": title, "body": body, "tag": tag}),
             vapid_private_key=settings.vapid_private_key.strip(),
-            vapid_claims={"sub": settings.vapid_subject.strip()},
+            vapid_claims={"sub": vapid_subject()},
         )
         return True
     except WebPushException as exc:
@@ -361,12 +388,15 @@ def describe_failure(subscription: dict[str, Any]) -> str:
     Used by the app's self-check so people see the real problem."""
     from pywebpush import WebPushException, webpush
 
+    problem = subject_problem()
+    if problem:
+        return problem
     try:
         webpush(
             subscription_info=subscription,
             data=json.dumps({"title": WELCOME[0], "body": WELCOME[1], "tag": "af-hello"}),
             vapid_private_key=settings.vapid_private_key.strip(),
-            vapid_claims={"sub": settings.vapid_subject.strip()},
+            vapid_claims={"sub": vapid_subject()},
         )
         return ""
     except WebPushException as exc:

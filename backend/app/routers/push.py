@@ -82,6 +82,10 @@ def _require_configured() -> None:
             detail="Push isn't configured on this server (VAPID keys missing).",
         )
 
+    problem = push.subject_problem()
+    if problem:
+        raise HTTPException(status_code=503, detail=problem)
+
 
 @router.post("/subscribe")
 def subscribe(req: SubscribeRequest) -> dict:

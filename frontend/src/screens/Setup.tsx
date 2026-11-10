@@ -1,3 +1,6 @@
+import { TrainingQuestions } from "../components/TrainingQuestions";
+import { trainingPreferences } from "../lib/weekly";
+import { loadConstraints, saveConstraints } from "../lib/constraints";
 import { useState } from "react";
 import { GOALS, PACES, type GoalId, type PlanPace } from "../lib/goals";
 import {
@@ -71,6 +74,9 @@ export function Setup() {
   const [activity, setActivity] = useState<ActivityLevel>(existing?.activity ?? "light");
   const [goals, setGoals] = useState<GoalId[]>(existing?.goals ?? []);
   const [pace, setPace] = useState<PlanPace>(existing?.pace ?? "steady");
+  const [training, setTraining] = useState(() => trainingPreferences(existing?.training));
+  const [chairMode, setChairMode] = useState(() => loadConstraints().chairMode);
+  const [equipment, setEquipment] = useState(() => localStorage.getItem("af.constraints.v1") ? loadConstraints().equipment : ["bodyweight"]);
   const [saved, setSaved] = useState<Profile | null>(null);
 
   const heightCm =
@@ -97,6 +103,8 @@ export function Setup() {
   function finish() {
     const w = Number(weight);
     const profile: Profile = {
+      ...existing,
+      training,
       version: 1,
       sex,
       birthYear: year - Number(age),
@@ -108,9 +116,10 @@ export function Setup() {
       units,
     };
     saveProfile(profile);
+    saveConstraints({ ...loadConstraints(), equipment, chairMode });
     markOnboarded();
     setSaved(profile);
-    setStep(3);
+    setStep(4);
   }
 
   const target = saved ? calorieTarget(saved, year) : null;
@@ -119,13 +128,14 @@ export function Setup() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-5 pb-28 pt-8">
       <header className="animate-rise">
         <p className="text-xs font-medium uppercase tracking-wide text-ink/40">
-          {step < 3 ? `Step ${step + 1} of 3` : "All set"}
+          {step < 4 ? `Step ${step + 1} of 4` : "All set"}
         </p>
         <h1 className="font-display mt-0.5 text-[1.75rem] font-semibold leading-tight">
           {step === 0 && "About you"}
           {step === 1 && "What are you after?"}
           {step === 2 && "How hard should we push?"}
-          {step === 3 && "Your plan is ready"}
+          {step === 3 && "Make room for your week"}
+          {step === 4 && "Your plan is ready"}
         </h1>
         {step === 0 && (
           <p className="mt-2 text-sm text-ink/60">
@@ -333,16 +343,26 @@ export function Setup() {
               Back
             </button>
             <button
-              onClick={finish}
+              onClick={() => setStep(3)}
               className="flex-1 rounded-xl bg-moss px-5 py-3.5 font-medium text-paper transition-transform active:scale-[0.98]"
             >
-              Build my plan
+              Next: your week
             </button>
           </div>
         </section>
       )}
 
       {step === 3 && (
+        <section className="space-y-5">
+          <TrainingQuestions value={training} onChange={setTraining} equipment={equipment} onEquipment={setEquipment} chairMode={chairMode} onChairMode={setChairMode} showLimitsLink={false} />
+          <div className="flex gap-2">
+            <button onClick={() => setStep(2)} className="rounded-xl border border-mist px-5 py-3">Back</button>
+            <button onClick={finish} disabled={training.weekdays.length !== training.days} className="flex-1 rounded-xl bg-moss px-5 py-3 font-medium text-paper disabled:opacity-40">Build my weekly plan</button>
+          </div>
+        </section>
+      )}
+
+      {step === 4 && (
         <section className="animate-rise space-y-4 [animation-delay:80ms]">
           <div className="rounded-3xl border border-mist bg-card p-5 shadow-sm">
             {target ? (
@@ -375,24 +395,24 @@ export function Setup() {
             </p>
           </div>
 
-          {goals.includes("injury_recovery") && (
+          {(
             <a
               href="#/constraints"
               className="block w-full rounded-xl border border-ochre px-5 py-3.5 text-center text-sm font-medium text-ochre transition-transform active:scale-[0.98]"
             >
-              Set your limits first (recommended)
+              Review body limits before starting
             </a>
           )}
           <a
-            href="#/"
+            href="#/plan"
             className="block w-full rounded-xl bg-moss px-5 py-3.5 text-center font-medium text-paper transition-transform active:scale-[0.98]"
           >
-            See today's plan
+            See my weekly plan
           </a>
         </section>
       )}
 
-      {step < 3 && (
+      {step < 4 && (
         <button
           onClick={() => {
             markOnboarded();

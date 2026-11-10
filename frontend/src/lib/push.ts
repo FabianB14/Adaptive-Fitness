@@ -101,6 +101,25 @@ export function isPushSupported(): boolean {
   );
 }
 
+/** Bound every worker wait, including opt-in and opt-out. */
+export async function readyRegistration(): Promise<ServiceWorkerRegistration> {
+  if (!isPushSupported()) throw new Error("This browser cannot receive reminders. Try an installed app or a supported browser.");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("The notification worker isn't ready. Close and reopen the installed app, then try again.")), 8000); }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export function pushProblemMessage(problem: string): string {
+  if (problem.includes("AF_VAPID_SUBJECT")) return "The server's notification contact address needs updating. The app owner needs to fix the server setup before reminders can start.";
+  return problem;
+}
+
 /** VAPID public key (base64url) → the byte array PushManager wants. */
 export function urlBase64ToUint8Array(base64url: string): Uint8Array {
   const padding = "=".repeat((4 - (base64url.length % 4)) % 4);
@@ -210,7 +229,7 @@ async function registerWithServer(
 /** Get a subscription that matches the server's current key, replacing a
     stale one if the keys were rotated. */
 async function ensureSubscription(publicKey: string): Promise<PushSubscription> {
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await readyRegistration();
   const existing = await reg.pushManager.getSubscription();
   if (existing) {
     if (subscriptionKeyMatches(existing, publicKey)) return existing;
@@ -230,6 +249,7 @@ async function ensureSubscription(publicKey: string): Promise<PushSubscription> 
 
 /** Full opt-in flow. Must be called from a user gesture (iOS requires it). */
 export async function enablePush(apiBase: string, prefs: PushPrefs): Promise<void> {
+  if (!isPushSupported()) throw new Error("This browser cannot receive reminders.");
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     throw new Error(
@@ -245,7 +265,7 @@ export async function enablePush(apiBase: string, prefs: PushPrefs): Promise<voi
     );
   }
   if (!cfg.healthy && cfg.problems.length > 0) {
-    throw new Error(cfg.problems[0]);
+    throw new Error(pushProblemMessage(cfg.problems[0]));
   }
   const sub = await ensureSubscription(cfg.public_key);
   await registerWithServer(apiBase, sub, prefs);
@@ -255,7 +275,7 @@ export async function enablePush(apiBase: string, prefs: PushPrefs): Promise<voi
 /** Ask the server to send one notification right now. `kind` picks which
     reminder's message to hear. */
 export async function sendHello(apiBase: string, kind?: string): Promise<void> {
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await readyRegistration();
   const sub = await reg.pushManager.getSubscription();
   if (!sub) throw new Error("This device isn't subscribed yet.");
   const r = await fetchWithTimeout(`${apiBase}/push/hello`, {
@@ -270,11 +290,11 @@ export async function disablePush(apiBase: string | null): Promise<void> {
   const prefs = loadPushPrefs();
   savePushPrefs({ ...prefs, enabled: false });
   try {
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await readyRegistration();
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
       if (apiBase) {
-        await fetch(`${apiBase}/push/unsubscribe`, {
+        await fetchWithTimeout(`${apiBase}/push/unsubscribe`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ endpoint: sub.endpoint }),
@@ -289,7 +309,7 @@ export async function disablePush(apiBase: string | null): Promise<void> {
 
 /** Push new hours/switches to the server without re-asking permission. */
 export async function syncReminders(apiBase: string, prefs: PushPrefs): Promise<void> {
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await readyRegistration();
   const sub = await reg.pushManager.getSubscription();
   if (!sub) throw new Error("This device isn't subscribed yet.");
   await registerWithServer(apiBase, sub, prefs);
@@ -302,7 +322,7 @@ export async function resubscribeIfEnabled(apiBase: string | null): Promise<void
   if (!prefs.enabled || !apiBase || !isPushSupported()) return;
   if (Notification.permission !== "granted") return;
   try {
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await readyRegistration();
     const sub = await reg.pushManager.getSubscription();
     if (sub) await registerWithServer(apiBase, sub, prefs);
   } catch {
@@ -324,7 +344,7 @@ export async function showLocalTest(): Promise<void> {
       throw new Error("Permission wasn't granted, so nothing can be shown.");
     }
   }
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await readyRegistration();
   await reg.showNotification("🧪 Test notification", {
     body: "If you can see this, your phone can show notifications. Delivery is the other half.",
     icon: `${import.meta.env.BASE_URL}icon-192.png`,
@@ -339,6 +359,7 @@ export interface CheckResult {
   label: string;
   ok: boolean;
   detail: string;
+  technicalDetail?: string;
 }
 
 /**
@@ -376,6 +397,8 @@ export async function runDiagnostics(apiBase: string | null): Promise<CheckResul
       : "This browser doesn't expose the Push API.",
   );
 
+  if (!isPushSupported()) return out;
+
   add(
     "Permission",
     Notification.permission === "granted",
@@ -392,12 +415,7 @@ export async function runDiagnostics(apiBase: string | null): Promise<CheckResul
 
   let reg: ServiceWorkerRegistration | null = null;
   try {
-    reg = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise<never>((_, rej) =>
-        setTimeout(() => rej(new Error("timed out")), 8000),
-      ),
-    ]);
+    reg = await readyRegistration();
     add("Service worker", true, "Active and ready.");
   } catch (e) {
     add(
@@ -422,16 +440,19 @@ export async function runDiagnostics(apiBase: string | null): Promise<CheckResul
   }
 
   add(
-    "Server push keys",
+    "Server notification setup",
     cfg.configured && cfg.healthy,
     cfg.problems.length > 0
-      ? cfg.problems.join(" ")
+      ? cfg.problems.map(pushProblemMessage).join(" ")
       : cfg.configured
         ? "VAPID keys present and readable."
         : "No VAPID keys set on the server.",
   );
 
-  const sub = reg ? await reg.pushManager.getSubscription() : null;
+  if (cfg.problems.length) out[out.length - 1].technicalDetail = cfg.problems.join(" ");
+  let sub: PushSubscription | null = null;
+  try { sub = reg ? await reg.pushManager.getSubscription() : null; }
+  catch { add("This device's subscription", false, "Couldn't read the subscription. Close and reopen the app, then try again."); return out; }
   if (!sub) {
     add("This device's subscription", false, "Not subscribed yet — turn a reminder on.");
     return out;

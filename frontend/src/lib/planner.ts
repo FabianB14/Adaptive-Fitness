@@ -187,6 +187,7 @@ export function generatePlan(
   pool: Exercise[] = fullPool,
   avoidSlugs: Set<string> = new Set(),
   goals: GoalId[] = [],
+  focusSlots?: string[][],
 ): DayPlan {
   const allowed = filterPool(pool, c);
   const rand = mulberry32(
@@ -211,8 +212,8 @@ export function generatePlan(
 
   return {
     date: dateISO,
-    full: pickForTier(allowed, c, slotsFor(FULL_SLOTS, "full", goals), "full", rand, avoidSlugs, goals),
-    light: pickForTier(allowed, c, slotsFor(LIGHT_SLOTS, "light", goals), "light", rand, avoidSlugs, goals),
+    full: pickForTier(allowed, c, focusSlots ?? slotsFor(FULL_SLOTS, "full", goals), "full", rand, avoidSlugs, goals),
+    light: pickForTier(allowed, c, focusSlots ?? slotsFor(LIGHT_SLOTS, "light", goals), "light", rand, avoidSlugs, goals),
     minimum: pickForTier(allowed, c, MINIMUM_SLOTS, "minimum", rand, avoidSlugs, goals),
     notes,
   };

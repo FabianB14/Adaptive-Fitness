@@ -6,7 +6,8 @@ import { daySignals, effectiveConstraints } from "../lib/engine";
 import { API_BASE } from "../lib/env";
 import { addLog, addPainEvent, loadLogs, loadPainEvents, removeLog, type PainEvent, type SessionLog, type TierChoice } from "../lib/logs";
 import { loadProfile } from "../lib/nutrition";
-import { generatePlan, type PlannedItem } from "../lib/planner";
+import { type PlannedItem } from "../lib/planner";
+import { planForDate, generateWeek } from "../lib/weekly";
 import { loadStates, slugsToAvoid } from "../lib/progress";
 import {
   isFirebaseConfigured,
@@ -58,16 +59,17 @@ export function Today() {
   );
   const plan = useMemo(
     () =>
-      generatePlan(
+      planForDate(
         constraints,
         date,
-        undefined,
+        loadProfile(),
         slugsToAvoid(loadStates()),
-        loadProfile()?.goals ?? [],
       ),
     [constraints, date],
   );
   const signals = useMemo(() => daySignals(logs, date), [logs, date]);
+  const profile = loadProfile();
+  const scheduled = profile?.training ? generateWeek(constraints, date, profile).days.find(d => d.date === date) : null;
   const todayLog = logs.find((l) => l.date === date);
 
   useEffect(() => watchAuth((u) => (setUser(u), setAuthReady(true))), []);
@@ -114,6 +116,11 @@ export function Today() {
       </header>
 
       <InstallPrompt />
+      <a href="#/plan" className="rounded-3xl border border-moss/30 bg-moss/10 p-5">
+        <span className="text-xs uppercase tracking-wide text-moss">{profile?.training ? "Your weekly plan" : "Let's build your week"}</span>
+        <span className="font-display mt-1 block text-lg font-semibold">{scheduled?.title ?? "A plan that fits your life"} →</span>
+        <span className="mt-1 block text-sm text-ink/60">{scheduled ? scheduled.guidance : "Choose your days, time, and style. We'll work around your limits."}</span>
+      </a>
 
       {/* Stat tiles */}
       <section className="animate-rise grid grid-cols-3 gap-2.5 [animation-delay:80ms]" aria-label="Your week">
@@ -193,7 +200,7 @@ export function Today() {
           </div>
         ) : (
           <>
-            {TIERS.map((t, i) => (
+            {!scheduled?.rest && TIERS.map((t, i) => (
               <TierCard
                 key={t.key}
                 tier={t}

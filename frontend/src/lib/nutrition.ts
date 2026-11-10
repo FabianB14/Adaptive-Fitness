@@ -12,7 +12,10 @@ import { type UnitSystem } from "./units";
 
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "high";
 
+import { type TrainingPreferences } from "./weekly";
+
 export interface Profile {
+  training?: TrainingPreferences;
   version: 1;
   sex: "male" | "female"; // for the BMR formula only
   birthYear: number;

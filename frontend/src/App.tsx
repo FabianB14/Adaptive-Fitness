@@ -9,6 +9,7 @@ import { OpenInSafari } from "./screens/OpenInSafari";
 import { ProgressScreen } from "./screens/Progress";
 import { Session } from "./screens/Session";
 import { isOnboarded, Setup } from "./screens/Setup";
+import { WeeklyPlan } from "./screens/WeeklyPlan";
 import { Today } from "./screens/Today";
 import { Upload } from "./screens/Upload";
 
@@ -57,6 +58,8 @@ export default function App() {
       key={sessionMatch[1]}
       tier={sessionMatch[1] as "full" | "light" | "minimum"}
     />
+  ) : route.startsWith("#/plan") ? (
+    <WeeklyPlan />
   ) : route.startsWith("#/library") ? (
     <Library />
   ) : route.startsWith("#/constraints") ? (

@@ -12,27 +12,38 @@ type Glyph =
   | "squat" | "chairsit" | "hinge" | "bridge" | "pushup" | "benchpress"
   | "overhead" | "row" | "pulldown" | "carry" | "twist" | "walk" | "run"
   | "bike" | "plank" | "birddog" | "deadbug" | "stretchstand" | "stretchseat"
-  | "cat";
+  | "cat" | "wallpush" | "seatedpress" | "seatedrow" | "lunge" | "legextension" | "supinestretch" | "breathing" | "seatedhold" | "seatedoverhead" | "seatedtwist" | "legcurl" | "kneelift" | "wheelchair" | "armcycle" | "rower";
 
 export function glyphFor(e: Exercise): Glyph {
   const p = e.position;
+  if (e.slug.includes("split-squat")) return "lunge";
+  if (e.slug === "wall-push-up" || e.slug === "incline-push-up") return "wallpush";
+  if (e.slug === "seated-leg-extension") return "legextension";
+  if (e.slug === "seated-knee-lift") return "kneelift";
+  if (e.slug === "seated-leg-curl") return "legcurl";
+  if (e.slug === "wheelchair-propulsion-intervals") return "wheelchair";
+  if (e.slug === "arm-ergometer") return "armcycle";
+  if (e.slug === "rowing-machine") return "rower";
+  if (e.slug === "seated-thoracic-rotation") return "seatedtwist";
+  if (e.slug === "diaphragmatic-breathing") return "breathing";
+  if (p === "seated" && e.movement_pattern === "carry") return "seatedhold";
   switch (e.movement_pattern) {
     case "squat":
       return p === "seated" ? "chairsit" : "squat";
     case "hinge":
       return p === "supine" ? "bridge" : p === "prone" ? "birddog" : "hinge";
     case "push_h":
-      return p === "supine" ? "benchpress" : p === "seated" ? "row" : "pushup";
+      return p === "supine" ? "benchpress" : p === "seated" ? "seatedpress" : "pushup";
     case "push_v":
-      return "overhead";
+      return p === "seated" ? "seatedoverhead" : "overhead";
     case "pull_h":
-      return "row";
+      return p === "seated" ? "seatedrow" : "row";
     case "pull_v":
       return "pulldown";
     case "carry":
       return "carry";
     case "rotate":
-      return "twist";
+      return p === "seated" ? "seatedtwist" : "twist";
     case "gait":
       if (p === "seated") return "bike";
       return e.impact_level === "moderate" || e.impact_level === "high"
@@ -47,6 +58,7 @@ export function glyphFor(e: Exercise): Glyph {
             ? "plank"
             : "chairsit";
     case "mobility":
+      if (p === "supine") return "supinestretch";
       return p === "quadruped"
         ? "cat"
         : p === "standing"
@@ -67,6 +79,66 @@ interface Frames {
 }
 
 const GLYPHS: Record<Glyph, Frames> = {
+  seatedoverhead: {
+    a: <>{HEAD(44,24)}<path d="M44 32 44 60 66 60 66 84 M44 40 30 36 30 24 M44 40 58 36 58 24 M30 64 66 64" /></>,
+    b: <>{HEAD(44,24)}<path d="M44 32 44 60 66 60 66 84 M44 40 30 24 30 12 M44 40 58 24 58 12 M30 64 66 64" /></>,
+  },
+  seatedtwist: {
+    a: <>{HEAD(44,24)}<path d="M44 32 44 60 66 60 66 84 M44 40 28 40 36 48 M30 64 66 64" /></>,
+    b: <>{HEAD(44,24)}<path d="M44 32 44 60 66 60 66 84 M44 40 60 40 52 48 M30 64 66 64" /></>,
+  },
+  legcurl: {
+    a: <>{HEAD(34,20)}<path d="M34 28 34 58 58 58 82 64 M34 36 50 48 M24 62 62 62" /></>,
+    b: <>{HEAD(34,20)}<path d="M34 28 34 58 58 58 48 82 M34 36 50 48 M24 62 62 62" /></>,
+  },
+  kneelift: {
+    a: <>{HEAD(34,20)}<path d="M34 28 34 58 58 58 58 84 M34 36 50 48 M24 62 62 62" /></>,
+    b: <>{HEAD(34,20)}<path d="M34 28 34 58 56 48 62 72 M34 36 50 48 M24 62 62 62" /></>,
+  },
+  wheelchair: {
+    a: <>{HEAD(44,20)}<circle cx="38" cy="68" r="18" /><circle cx="76" cy="80" r="6" /><path d="M44 28 44 54 62 54 70 76 M44 36 26 46 24 66 M28 30 28 54 62 54" /></>,
+    b: <>{HEAD(44,20)}<circle cx="38" cy="68" r="18" /><circle cx="76" cy="80" r="6" /><path d="M44 28 44 54 62 54 70 76 M44 36 52 52 54 72 M28 30 28 54 62 54" /></>,
+  },
+  armcycle: {
+    a: <>{HEAD(32,20)}<path d="M32 28 32 58 52 58 52 84 M32 36 48 30 64 40 M64 40 64 82 M22 62 52 62" /><circle cx="64" cy="40" r="10" /></>,
+    b: <>{HEAD(32,20)}<path d="M32 28 32 58 52 58 52 84 M32 36 46 50 64 40 M64 40 64 82 M22 62 52 62" /><circle cx="64" cy="40" r="10" /></>,
+  },
+  rower: {
+    a: <>{HEAD(48,24)}<path d="M46 32 40 60 62 48 80 78 M46 38 68 44 M14 84 90 84" /></>,
+    b: <>{HEAD(24,26)}<path d="M26 34 40 60 62 70 80 78 M28 40 24 52 40 50 M14 84 90 84" /></>,
+  },
+  wallpush: {
+    a: <>{HEAD(45,20)}<path d="M46 28 40 56 30 84 M46 36 74 36 M80 12 80 88" /></>,
+    b: <>{HEAD(62,20)}<path d="M62 28 46 56 30 84 M60 36 62 48 74 36 M80 12 80 88" /></>,
+  },
+  seatedpress: {
+    a: <>{HEAD(38,20)}<path d="M38 28 38 58 58 58 58 84 M38 36 30 48 44 40 M25 32 25 88 M25 62 60 62" /></>,
+    b: <>{HEAD(38,20)}<path d="M38 28 38 58 58 58 58 84 M38 36 56 36 74 36 M25 32 25 88 M25 62 60 62" /></>,
+  },
+  seatedrow: {
+    a: <>{HEAD(38,20)}<path d="M38 28 38 58 58 58 58 84 M38 36 56 36 74 36 M25 62 60 62" /></>,
+    b: <>{HEAD(38,20)}<path d="M38 28 38 58 58 58 58 84 M38 36 26 48 44 42 M25 62 60 62" /></>,
+  },
+  lunge: {
+    a: <>{HEAD(48,16)}<path d="M48 24 48 50 M48 50 66 66 72 84 M48 50 30 66 24 84 M48 34 60 44" /></>,
+    b: <>{HEAD(48,30)}<path d="M48 38 48 60 M48 60 68 60 72 84 M48 60 28 78 24 84 M48 46 60 54" /></>,
+  },
+  legextension: {
+    a: <>{HEAD(34,20)}<path d="M34 28 34 58 56 58 56 84 M34 36 50 48 M24 62 60 62" /></>,
+    b: <>{HEAD(34,20)}<path d="M34 28 34 58 56 58 82 58 M34 36 50 48 M24 62 60 62" /></>,
+  },
+  supinestretch: {
+    a: <>{HEAD(20,72)}<path d="M28 76 56 76 68 54 82 76 M38 76 52 62 M12 86 90 86" /></>,
+    b: <>{HEAD(20,72)}<path d="M28 76 56 76 50 48 72 60 M38 76 48 54 M12 86 90 86" /></>,
+  },
+  breathing: {
+    a: <>{HEAD(20,72)}<path d="M28 76 56 76 68 54 82 76 M38 76 46 66 52 74 M12 86 90 86" /><path d="M42 56 Q48 50 54 56" /></>,
+    b: <>{HEAD(20,72)}<path d="M28 76 56 76 68 54 82 76 M38 76 46 64 52 72 M12 86 90 86" /><path d="M38 52 Q48 40 58 52" /></>,
+  },
+  seatedhold: {
+    a: <>{HEAD(44,20)}<path d="M44 28 44 58 64 58 64 84 M44 36 30 54 M24 62 66 62" /><circle cx="30" cy="60" r="4" /></>,
+    b: <>{HEAD(44,20)}<path d="M44 28 44 58 64 58 64 84 M44 36 30 54 M24 62 66 62" /><circle cx="30" cy="60" r="4" /></>,
+  },
   walk: {
     a: (
       <>
@@ -442,9 +514,11 @@ const GLYPHS: Record<Glyph, Frames> = {
 export function ExerciseFigure({
   exercise,
   className = "h-11 w-11",
+  mode = "animate",
 }: {
   exercise: Exercise;
   className?: string;
+  mode?: "animate" | "pause" | "start" | "end";
 }) {
   const frames = GLYPHS[glyphFor(exercise)];
   return (
@@ -454,8 +528,10 @@ export function ExerciseFigure({
       className={`shrink-0 stroke-ink/50 ${className}`}
       style={{ strokeWidth: 5.5, strokeLinecap: "round", strokeLinejoin: "round", fill: "none" }}
     >
-      <g className="af-pose-a">{frames.a}</g>
-      <g className="af-pose-b">{frames.b}</g>
+      {mode === "start" ? <g>{frames.a}</g> : mode === "end" ? <g>{frames.b}</g> : <>
+        <g className="af-pose-a" style={{ animationPlayState: mode === "pause" ? "paused" : "running" }}>{frames.a}</g>
+        <g className="af-pose-b" style={{ animationPlayState: mode === "pause" ? "paused" : "running" }}>{frames.b}</g>
+      </>}
     </svg>
   );
 }

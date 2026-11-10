@@ -1,3 +1,4 @@
+import { ExerciseDemo } from "../components/ExerciseDemo";
 import { useMemo, useState } from "react";
 import { ExerciseFigure } from "../components/ExerciseFigure";
 import {
@@ -165,7 +166,7 @@ function ExerciseCard({
       </button>
       {open && (
         <div className="space-y-2 border-t border-mist p-4 text-sm">
-          <p className="text-ink/80">{e.cue}</p>
+          <ExerciseDemo exercise={e} />
           <p className="font-data text-xs text-ink/50">
             impact {e.impact_level}
             {e.axial_load && " · axial load"}
